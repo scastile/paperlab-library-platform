@@ -61,8 +61,10 @@ export default function LandingPage() {
       window.location.href = buildProductUrl(redirect, session)
       return null
     }
-    navigate('/dashboard')
-    return null
+    if (!searchParams.get('signed_out')) {
+      navigate('/dashboard')
+      return null
+    }
   }
 
   const handleSubmit = async (e) => {
