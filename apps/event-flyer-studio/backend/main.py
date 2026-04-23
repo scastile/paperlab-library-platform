@@ -82,7 +82,7 @@ async def generate_background_image(prompt: str) -> bytes:
                 "X-Title": "Event Flyer Studio",
             },
             json={
-                "model": "google/gemini-2.5-flash-image",
+                "model": "google/gemini-3.1-flash-image-preview",
                 "messages": [{"role": "user", "content": f"Generate a flyer background image: {prompt}"}],
                 "modalities": ["image", "text"],
                 "max_tokens": 4096,
@@ -133,7 +133,8 @@ async def generate(req: GenerateRequest, auth: tuple = Depends(get_current_user_
         req.vibe,
         req.date,
         req.time,
-        req.location
+        req.location,
+        req.layout,
     )
     
     # Generate background image if requested
@@ -184,8 +185,9 @@ async def generate(req: GenerateRequest, auth: tuple = Depends(get_current_user_
 
 @app.post("/api/regenerate")
 async def regenerate(req: FlyerUpdateRequest, auth: tuple = Depends(get_current_user_with_token)):
-    """Re-render a flyer with edited text fields. Does NOT deduct credits."""
-    # This endpoint is for tweaking text after generation
+    """Re-render a flyer with edited text fields. Deducts 2 credits."""
+    user_id, token = auth
+    await deduct_credits_via_launchpad(token, "flyer_regenerate")
     render_fields = {
         "headline": req.headline or "",
         "body_text": req.body_text or "",
@@ -195,10 +197,10 @@ async def regenerate(req: FlyerUpdateRequest, auth: tuple = Depends(get_current_
         "location": req.location or "",
         "website": req.website or "",
         "image_path": None,
-        "accent_color": "#6366f1",
-        "vibe": "Modern & Sleek",
+        "accent_color": req.accent_color or "#6366f1",
+        "vibe": req.vibe or "Modern & Sleek",
     }
-    png_bytes = render_flyer(render_fields, layout="poster")
+    png_bytes = render_flyer(render_fields, layout=req.layout or "poster")
     png_b64 = base64.b64encode(png_bytes).decode("utf-8")
     return {"png_base64": png_b64}
 
