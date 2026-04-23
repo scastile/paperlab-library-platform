@@ -1,0 +1,125 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-page: #f5f5f7;
+  --bg-card: #ffffff;
+  --bg-elevated: #ffffff;
+  --bg-input: #ffffff;
+  --bg-hover: rgba(0, 0, 0, 0.03);
+  --text-primary: #1d1d1f;
+  --text-secondary: #86868b;
+  --text-tertiary: #aeaeb2;
+  --text-on-accent: #ffffff;
+  --accent-from: #6366f1;
+  --accent-to: #8b5cf6;
+  --accent-hover-from: #4f46e5;
+  --accent-hover-to: #7c3aed;
+  --accent-solid: #6366f1;
+  --tint-indigo: rgba(99, 102, 241, 0.1);
+  --tint-violet: rgba(139, 92, 246, 0.1);
+  --tint-rose: rgba(244, 63, 94, 0.1);
+  --tint-amber: rgba(245, 158, 11, 0.1);
+  --tint-emerald: rgba(16, 185, 129, 0.1);
+  --tint-sky: rgba(14, 165, 233, 0.1);
+  --border-subtle: rgba(0, 0, 0, 0.05);
+  --border-default: rgba(0, 0, 0, 0.08);
+  --border-strong: rgba(0, 0, 0, 0.12);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.04), 0 0 0 0.5px rgba(0, 0, 0, 0.06);
+  --shadow-card-hover: 0 8px 24px rgba(0, 0, 0, 0.06), 0 0 0 0.5px rgba(0, 0, 0, 0.08);
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --duration-normal: 250ms;
+  color-scheme: light;
+}
+
+[data-theme="dark"] {
+  --bg-page: #000000;
+  --bg-card: #1c1c1e;
+  --bg-elevated: #2c2c2e;
+  --bg-input: #2c2c2e;
+  --bg-hover: rgba(255, 255, 255, 0.05);
+  --text-primary: #f5f5f5;
+  --text-secondary: #86868b;
+  --text-tertiary: #636366;
+  --accent-from: #818cf8;
+  --accent-to: #a78bfa;
+  --accent-hover-from: #6366f1;
+  --accent-hover-to: #8b5cf6;
+  --accent-solid: #818cf8;
+  --tint-indigo: rgba(129, 140, 248, 0.12);
+  --tint-violet: rgba(167, 139, 250, 0.12);
+  --tint-rose: rgba(251, 113, 133, 0.12);
+  --tint-amber: rgba(251, 191, 36, 0.12);
+  --tint-emerald: rgba(52, 211, 153, 0.12);
+  --tint-sky: rgba(56, 189, 248, 0.12);
+  --border-subtle: rgba(255, 255, 255, 0.04);
+  --border-default: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.12);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow-card: 0 0 0 0.5px rgba(255, 255, 255, 0.06);
+  --shadow-card-hover: 0 8px 24px rgba(0, 0, 0, 0.3), 0 0 0 0.5px rgba(255, 255, 255, 0.08);
+  color-scheme: dark;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  background-color: var(--bg-page);
+  color: var(--text-primary);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.6;
+}
+
+@layer components {
+  .btn-gradient {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: linear-gradient(135deg, var(--accent-from), var(--accent-to));
+    color: var(--text-on-accent);
+    border: none;
+    padding: 12px 24px;
+    border-radius: var(--radius-sm);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all var(--duration-normal) var(--ease-out);
+    text-decoration: none;
+  }
+  .btn-gradient:hover {
+    background: linear-gradient(135deg, var(--accent-hover-from), var(--accent-hover-to));
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);
+  }
+  .btn-gradient:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .card-lift {
+    background: var(--bg-card);
+    border: 0.5px solid var(--border-default);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-card);
+    transition: all var(--duration-normal) var(--ease-out);
+  }
+  .card-lift:hover {
+    box-shadow: var(--shadow-card-hover);
+    transform: translateY(-2px);
+  }
+
+  .tint-indigo { background: var(--tint-indigo); color: var(--accent-solid); }
+  .tint-violet { background: var(--tint-violet); color: #8b5cf6; }
+  .tint-rose { background: var(--tint-rose); color: #f43f5e; }
+  .tint-emerald { background: var(--tint-emerald); color: #10b981; }
+  .tint-amber { background: var(--tint-amber); color: #f59e0b; }
+  .tint-sky { background: var(--tint-sky); color: #0ea5e9; }
+}

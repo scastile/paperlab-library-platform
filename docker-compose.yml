@@ -71,15 +71,14 @@ services:
 
   # --- LibPaper Landing Page ---
   landing:
-    image: python:3.11-slim
-    working_dir: /app
-    volumes:
-      - ./apps/libpaper-landing:/app
-    command: python -m http.server 8202
+    build: ./apps/libpaper-landing
     ports:
-      - "8202:8202"
+      - "8202:80"
     networks:
       - default
+      - papercore
+    depends_on:
+      - launchpad-backend
     restart: unless-stopped
 
 networks:

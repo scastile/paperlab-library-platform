@@ -1,0 +1,278 @@
+import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
+import { Loader2, BookOpen } from 'lucide-react'
+import ServiceCard from '../components/ServiceCard'
+import { Rocket, Puzzle, Palette, FileText } from 'lucide-react'
+
+const SERVICES = [
+  {
+    icon: Rocket,
+    title: 'Library Launchpad',
+    description: 'AI-powered promotional campaigns. Display themes, shelf talkers, social posts, and signage — generated in seconds from any topic.',
+    href: 'https://launchpad.paperlab.xyz',
+    tint: 'tint-indigo',
+    tag: 'Live',
+    tagClass: 'bg-emerald-500/10 text-emerald-500',
+  },
+  {
+    icon: Puzzle,
+    title: 'Escape Room Designer',
+    description: 'Complete escape room concepts with puzzle paths, prop inventories, clue sequences, and game master cheat sheets.',
+    href: 'https://escape.paperlab.xyz',
+    tint: 'tint-violet',
+    tag: 'Live',
+    tagClass: 'bg-emerald-500/10 text-emerald-500',
+  },
+  {
+    icon: Palette,
+    title: 'Event Flyer Studio',
+    description: 'Describe your event, pick a vibe, get a print-ready flyer. AI-generated imagery with your library\'s info baked in.',
+    href: 'https://flyer.paperlab.xyz',
+    tint: 'tint-rose',
+    tag: 'Live',
+    tagClass: 'bg-emerald-500/10 text-emerald-500',
+  },
+  {
+    icon: FileText,
+    title: 'LibPDF',
+    description: 'Merge, split, convert, OCR, and sign PDFs. A full document toolkit for staff and patrons — no IT setup required.',
+    href: '#',
+    tint: 'tint-emerald',
+    tag: 'Coming Soon',
+    tagClass: 'bg-amber-500/10 text-amber-500',
+  },
+]
+
+export default function LandingPage() {
+  const { user, signIn, signUp } = useAuth()
+  const navigate = useNavigate()
+  const [mode, setMode] = useState('signin')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  if (user) {
+    navigate('/dashboard')
+    return null
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setError('')
+    setLoading(true)
+    try {
+      if (mode === 'signin') {
+        await signIn(email, password)
+      } else {
+        await signUp(email, password)
+      }
+      navigate('/dashboard')
+    } catch (e) {
+      setError(e.message || 'Authentication failed')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-page">
+      {/* Theme Toggle */}
+      <ThemeToggle />
+
+      <div className="max-w-6xl mx-auto px-6">
+        {/* Hero */}
+        <section className="text-center pt-20 pb-12">
+          <h1 className="text-4xl md:text-5xl font-bold text-primary tracking-tight leading-tight">
+            Turn Any Topic Into a{' '}
+            <span className="bg-gradient-to-r from-[var(--accent-from)] to-[var(--accent-to)] bg-clip-text text-transparent">
+              Library Event
+            </span>
+          </h1>
+          <p className="text-lg text-secondary mt-4 max-w-2xl mx-auto leading-relaxed">
+            AI-powered promotional campaigns, escape rooms, event flyers, and document tools — built for how libraries actually work.
+          </p>
+        </section>
+
+        {/* Product Cards */}
+        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-20">
+          {SERVICES.map((s) => (
+            <ServiceCard key={s.title} {...s} />
+          ))}
+        </section>
+
+        {/* Auth + Demo + Pricing Grid */}
+        <section className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-20">
+          {/* Auth Card */}
+          <div className="lg:col-span-3 card-lift p-8 flex flex-col">
+            <h2 className="text-xl font-bold text-primary mb-1">
+              {mode === 'signin' ? 'Welcome back' : 'Create your account'}
+            </h2>
+            <p className="text-sm text-secondary mb-6">
+              {mode === 'signin' ? 'Sign in to your campaigns' : 'Get 10 free credits to try it out'}
+            </p>
+
+            {error && (
+              <div className="mb-4 px-4 py-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-sm">
+                {error}
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-4 flex-1 flex flex-col">
+              <div>
+                <label className="block text-xs font-semibold text-secondary uppercase tracking-wider mb-1.5">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@library.org"
+                  required
+                  autoComplete="email"
+                  className="w-full px-4 py-3 rounded-lg bg-input border border-default text-primary placeholder:text-tertiary focus:outline-none focus:ring-2 focus:ring-[var(--accent-solid)]/30 text-[15px]"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-secondary uppercase tracking-wider mb-1.5">
+                  Password
+                </label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  minLength={6}
+                  autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
+                  className="w-full px-4 py-3 rounded-lg bg-input border border-default text-primary placeholder:text-tertiary focus:outline-none focus:ring-2 focus:ring-[var(--accent-solid)]/30 text-[15px]"
+                />
+              </div>
+
+              <button type="submit" disabled={loading} className="btn-gradient w-full justify-center disabled:opacity-50">
+                {loading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : mode === 'signin' ? (
+                  'Sign In'
+                ) : (
+                  'Create Account & Get 10 Free Credits'
+                )}
+              </button>
+
+              <div className="flex items-center justify-center gap-2 text-xs text-tertiary mt-2">
+                <span>No credit card required</span>
+                <span>·</span>
+                <span>Instant access</span>
+                <span>·</span>
+                <span>Cancel anytime</span>
+              </div>
+
+              <p className="text-center text-sm text-secondary mt-1">
+                {mode === 'signin' ? (
+                  <>Don't have an account? <button type="button" onClick={() => setMode('signup')} className="text-[var(--accent-solid)] font-medium hover:underline bg-transparent border-none p-0 cursor-pointer">Sign up free</button></>
+                ) : (
+                  <>Already have an account? <button type="button" onClick={() => setMode('signin')} className="text-[var(--accent-solid)] font-medium hover:underline bg-transparent border-none p-0 cursor-pointer">Sign in</button></>
+                )}
+              </p>
+
+              <div className="mt-auto pt-6">
+                <div className="bg-page rounded-lg p-4 text-center">
+                  <p className="font-semibold text-primary text-sm">Get 10 free credits on signup</p>
+                  <p className="text-secondary text-xs mt-1">Enough for a full campaign + rerolls, or try any product</p>
+                </div>
+              </div>
+            </form>
+          </div>
+
+          {/* Right Stack: Demo + Pricing */}
+          <div className="lg:col-span-2 flex flex-col gap-5">
+            {/* Demo Card */}
+            <div className="card-lift p-7 text-center flex flex-col items-center justify-center flex-1">
+              <div className="w-12 h-12 rounded-xl tint-indigo flex items-center justify-center mb-4">
+                <BookOpen className="w-6 h-6 text-[var(--accent-solid)]" />
+              </div>
+              <h3 className="text-base font-bold text-primary mb-1">Try the Demo</h3>
+              <p className="text-sm text-secondary leading-relaxed mb-5">
+                See Alice in Wonderland escape rooms, promotional displays, and social media campaigns — no signup required.
+              </p>
+              <a href="https://launchpad.paperlab.xyz?demo=1" className="btn-gradient">
+                Browse Example Campaigns →
+              </a>
+            </div>
+
+            {/* Pricing Card */}
+            <div className="card-lift p-6">
+              <p className="text-xs font-semibold text-secondary uppercase tracking-wider mb-4">Simple Pricing</p>
+              <div className="bg-page rounded-lg p-3 text-center mb-4">
+                <p className="font-semibold text-primary text-sm">10 free credits on signup</p>
+                <p className="text-tertiary text-xs mt-0.5">No card required · Enough for a full campaign</p>
+              </div>
+
+              <p className="text-xs font-semibold text-secondary uppercase tracking-wider mb-2">
+                Monthly Plans <span className="text-[var(--accent-solid)] normal-case ml-1">Best Value</span>
+              </p>
+              <div className="space-y-1.5 text-sm">
+                <div className="flex justify-between items-baseline">
+                  <span className="text-secondary">Creator <span className="text-tertiary">· 60 credits</span></span>
+                  <span className="font-semibold text-primary">$12.99<span className="text-tertiary font-normal text-xs">/mo</span></span>
+                </div>
+                <div className="flex justify-between items-baseline">
+                  <span className="text-secondary">Pro <span className="text-tertiary">· 150 credits</span></span>
+                  <span className="font-semibold text-primary">$24.99<span className="text-tertiary font-normal text-xs">/mo</span></span>
+                </div>
+                <div className="flex justify-between items-baseline">
+                  <span className="text-secondary">Institution <span className="text-tertiary">· 400 credits</span></span>
+                  <span className="font-semibold text-primary">$49.99<span className="text-tertiary font-normal text-xs">/mo</span></span>
+                </div>
+              </div>
+
+              <div className="border-t border-subtle mt-3 pt-3">
+                <p className="text-xs font-semibold text-secondary uppercase tracking-wider mb-2">
+                  Credit Packs <span className="text-tertiary normal-case font-normal ml-1">· 90-day expiry</span>
+                </p>
+                <div className="space-y-1.5 text-sm">
+                  <div className="flex justify-between items-baseline">
+                    <span className="text-secondary">Small Pack <span className="text-tertiary">· 15 credits</span></span>
+                    <span className="font-semibold text-primary">$7</span>
+                  </div>
+                  <div className="flex justify-between items-baseline">
+                    <span className="text-secondary">Large Pack <span className="text-tertiary">· 75 credits</span></span>
+                    <span className="font-semibold text-primary">$25</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      {/* Footer */}
+      <footer className="border-t border-subtle">
+        <div className="max-w-6xl mx-auto px-6 py-5 flex items-center justify-center gap-2 text-sm text-secondary">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+          <span>Powered by <span className="text-primary font-medium">PaperLab</span></span>
+        </div>
+      </footer>
+    </div>
+  )
+}
+
+function ThemeToggle() {
+  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light')
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme)
+    localStorage.setItem('theme', theme)
+  }, [theme])
+
+  return (
+    <button
+      onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')}
+      className="fixed top-5 right-5 w-9 h-9 rounded-full bg-card border border-default flex items-center justify-center text-base shadow-sm hover:shadow-card transition-all z-50"
+      aria-label="Toggle dark mode"
+    >
+      {theme === 'dark' ? '☀️' : '🌙'}
+    </button>
+  )
+}
