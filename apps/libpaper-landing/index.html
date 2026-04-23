@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#f5f5f7" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
+  <title>LibPaper — AI Tools Built for Libraries</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
+  <style>
+    :root {
+      --bg-page: #f5f5f7;
+      --bg-card: #ffffff;
+      --bg-elevated: #ffffff;
+      --bg-input: #ffffff;
+      --bg-hover: rgba(0, 0, 0, 0.03);
+      --text-primary: #1d1d1f;
+      --text-secondary: #86868b;
+      --text-tertiary: #aeaeb2;
+      --text-on-accent: #ffffff;
+      --accent-from: #6366f1;
+      --accent-to: #8b5cf6;
+      --accent-hover-from: #4f46e5;
+      --accent-hover-to: #7c3aed;
+      --accent-gradient: linear-gradient(135deg, var(--accent-from), var(--accent-to));
+      --accent-gradient-hover: linear-gradient(135deg, var(--accent-hover-from), var(--accent-hover-to));
+      --accent-solid: #6366f1;
+      --tint-indigo: rgba(99, 102, 241, 0.1);
+      --tint-violet: rgba(139, 92, 246, 0.1);
+      --tint-rose: rgba(244, 63, 94, 0.1);
+      --tint-amber: rgba(245, 158, 11, 0.1);
+      --tint-emerald: rgba(16, 185, 129, 0.1);
+      --tint-sky: rgba(14, 165, 233, 0.1);
+      --border-subtle: rgba(0, 0, 0, 0.05);
+      --border-default: rgba(0, 0, 0, 0.08);
+      --border-strong: rgba(0, 0, 0, 0.12);
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+      --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.04), 0 0 0 0.5px rgba(0, 0, 0, 0.06);
+      --shadow-card-hover: 0 8px 24px rgba(0, 0, 0, 0.06), 0 0 0 0.5px rgba(0, 0, 0, 0.08);
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+      --duration-normal: 250ms;
+      color-scheme: light;
+    }
+
+    [data-theme="dark"] {
+      --bg-page: #000000;
+      --bg-card: #1c1c1e;
+      --bg-elevated: #2c2c2e;
+      --bg-input: #2c2c2e;
+      --bg-hover: rgba(255, 255, 255, 0.05);
+      --text-primary: #f5f5f5;
+      --text-secondary: #86868b;
+      --text-tertiary: #636366;
+      --accent-from: #818cf8;
+      --accent-to: #a78bfa;
+      --accent-hover-from: #6366f1;
+      --accent-hover-to: #8b5cf6;
+      --accent-gradient: linear-gradient(135deg, var(--accent-from), var(--accent-to));
+      --accent-gradient-hover: linear-gradient(135deg, var(--accent-hover-from), var(--accent-hover-to));
+      --accent-solid: #818cf8;
+      --tint-indigo: rgba(129, 140, 248, 0.12);
+      --tint-violet: rgba(167, 139, 250, 0.12);
+      --tint-rose: rgba(251, 113, 133, 0.12);
+      --tint-amber: rgba(251, 191, 36, 0.12);
+      --tint-emerald: rgba(52, 211, 153, 0.12);
+      --tint-sky: rgba(56, 189, 248, 0.12);
+      --border-subtle: rgba(255, 255, 255, 0.04);
+      --border-default: rgba(255, 255, 255, 0.08);
+      --border-strong: rgba(255, 255, 255, 0.12);
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
+      --shadow-card: 0 0 0 0.5px rgba(255, 255, 255, 0.06);
+      --shadow-card-hover: 0 8px 24px rgba(0, 0, 0, 0.3), 0 0 0 0.5px rgba(255, 255, 255, 0.08);
+      color-scheme: dark;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      background-color: var(--bg-page);
+      color: var(--text-primary);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+      line-height: 1.6;
+    }
+
+    .container { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+
+    /* Hero */
+    .hero { text-align: center; padding: 80px 0 48px; }
+    .hero h1 {
+      font-size: clamp(2rem, 5vw, 3.25rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text-primary);
+      line-height: 1.15;
+    }
+    .hero h1 .gradient {
+      background: var(--accent-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero p {
+      color: var(--text-secondary);
+      font-size: 1.125rem;
+      margin-top: 16px;
+      max-width: 640px;
+      margin-left: auto;
+      margin-right: auto;
+      line-height: 1.7;
+    }
+
+    /* Product Cards */
+    .products-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+      margin: 48px 0 80px;
+    }
+    @media (max-width: 900px) { .products-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 520px) { .products-grid { grid-template-columns: 1fr; } }
+
+    .product-card {
+      background: var(--bg-card);
+      border: 0.5px solid var(--border-default);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-card);
+      padding: 28px 24px;
+      transition: all var(--duration-normal) var(--ease-out);
+      display: flex;
+      flex-direction: column;
+      text-decoration: none;
+      color: inherit;
+    }
+    .product-card:hover {
+      box-shadow: var(--shadow-card-hover);
+      transform: translateY(-2px);
+    }
+    .product-card .icon {
+      width: 44px;
+      height: 44px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+      font-size: 22px;
+    }
+    .product-card h3 {
+      font-size: 1.05rem;
+      font-weight: 650;
+      color: var(--text-primary);
+      margin-bottom: 6px;
+    }
+    .product-card .desc {
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+      line-height: 1.55;
+      flex: 1;
+    }
+    .product-card .tag {
+      display: inline-block;
+      margin-top: 14px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      align-self: flex-start;
+    }
+    .tag-live { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+    .tag-soon { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+
+    .tint-indigo { background: var(--tint-indigo); color: var(--accent-solid); }
+    .tint-violet { background: var(--tint-violet); color: #8b5cf6; }
+    .tint-rose { background: var(--tint-rose); color: #f43f5e; }
+    .tint-emerald { background: var(--tint-emerald); color: #10b981; }
+    .tint-amber { background: var(--tint-amber); color: #f59e0b; }
+    .tint-sky { background: var(--tint-sky); color: #0ea5e9; }
+
+    /* Auth + Demo + Pricing Grid (replaces detail-grid) */
+    .auth-demo-grid {
+      display: grid;
+      grid-template-columns: 3fr 2fr;
+      gap: 24px;
+      margin-bottom: 80px;
+      align-items: stretch;
+    }
+    @media (max-width: 768px) { .auth-demo-grid { grid-template-columns: 1fr; } }
+
+    /* Auth Card */
+    .auth-card {
+      background: var(--bg-card);
+      border: 0.5px solid var(--border-default);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-card);
+      padding: 32px;
+      display: flex;
+      flex-direction: column;
+    }
+    .auth-card h2 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+    .auth-card .subtitle {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      margin-bottom: 20px;
+    }
+    .auth-card .form-group { margin-bottom: 16px; }
+    .auth-card label {
+      display: block;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+    }
+    .auth-card input {
+      width: 100%;
+      padding: 12px 16px;
+      background: var(--bg-input);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 0.9375rem;
+      transition: all var(--duration-normal) var(--ease-out);
+    }
+    .auth-card input::placeholder { color: var(--text-tertiary); }
+    .auth-card input:focus {
+      outline: none;
+      border-color: var(--accent-solid);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+    }
+    .btn-gradient {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: var(--accent-gradient);
+      color: var(--text-on-accent);
+      border: none;
+      padding: 12px 24px;
+      border-radius: var(--radius-sm);
+      font-size: 0.9375rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all var(--duration-normal) var(--ease-out);
+      text-decoration: none;
+      width: 100%;
+    }
+    .btn-gradient:hover {
+      background: var(--accent-gradient-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);
+    }
+    .btn-gradient:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .auth-card .error-box {
+      background: rgba(244, 63, 94, 0.1);
+      border: 1px solid rgba(244, 63, 94, 0.2);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      color: #f43f5e;
+      font-size: 0.8125rem;
+      margin-bottom: 16px;
+    }
+    .auth-card .trust-badges {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 12px;
+      font-size: 0.6875rem;
+      color: var(--text-tertiary);
+    }
+    .auth-card .toggle-mode {
+      margin-top: 12px;
+      text-align: center;
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
+    }
+    .auth-card .toggle-mode button {
+      background: none;
+      border: none;
+      color: var(--accent-solid);
+      font-weight: 500;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: inherit;
+    }
+    .auth-card .credit-info {
+      margin-top: 12px;
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--text-tertiary);
+    }
+    .auth-card .credit-info span { color: var(--text-secondary); font-weight: 500; }
+    .auth-card .free-credits-box {
+      margin-top: auto;
+      background: var(--bg-page);
+      border-radius: var(--radius-sm);
+      padding: 14px;
+      text-align: center;
+      font-size: 0.8125rem;
+    }
+    .auth-card .free-credits-box p:first-child { font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
+    .auth-card .free-credits-box p:last-child { color: var(--text-secondary); }
+    .auth-card .spinner {
+      width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #auth-form-container {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+
+    /* Demo Card */
+    .demo-card {
+      background: var(--bg-card);
+      border: 0.5px solid var(--border-default);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-card);
+      padding: 28px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      transition: all var(--duration-normal) var(--ease-out);
+    }
+    .demo-card:hover {
+      box-shadow: var(--shadow-card-hover);
+      transform: translateY(-2px);
+    }
+    .demo-card .icon-wrap {
+      width: 48px; height: 48px;
+      border-radius: var(--radius-sm);
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 14px;
+    }
+    .demo-card h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 6px;
+    }
+    .demo-card p {
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      margin-bottom: 18px;
+    }
+
+    /* Pricing Card */
+    .pricing-card {
+      background: var(--bg-card);
+      border: 0.5px solid var(--border-default);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-sm);
+      padding: 24px;
+    }
+    .pricing-card .section-label {
+      font-size: 0.6875rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      margin-bottom: 14px;
+    }
+    .pricing-card .free-box {
+      background: var(--bg-page);
+      border-radius: var(--radius-sm);
+      padding: 12px;
+      text-align: center;
+      margin-bottom: 16px;
+    }
+    .pricing-card .free-box p:first-child { font-weight: 600; color: var(--text-primary); font-size: 0.875rem; }
+    .pricing-card .free-box p:last-child { color: var(--text-tertiary); font-size: 0.6875rem; margin-top: 2px; }
+    .pricing-card .tier-label {
+      font-size: 0.6875rem;
+      font-weight: 600;
+      color: var(--text-tertiary);
+      margin-bottom: 8px;
+    }
+    .pricing-card .tier-label .best {
+      color: var(--accent-solid);
+      font-weight: 600;
+      margin-left: 4px;
+    }
+    .pricing-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      font-size: 0.8125rem;
+      margin-bottom: 6px;
+    }
+    .pricing-row .name { color: var(--text-secondary); }
+    .pricing-row .name .detail { color: var(--text-tertiary); }
+    .pricing-row .price { color: var(--text-primary); font-weight: 600; }
+    .pricing-row .price .per { color: var(--text-tertiary); font-weight: 400; }
+    .pricing-row .price .unit { color: var(--text-tertiary); font-size: 0.6875rem; font-weight: 400; }
+    .pricing-divider {
+      border-top: 1px solid var(--border-subtle);
+      margin: 12px 0;
+      padding-top: 12px;
+    }
+
+    /* Right column stack */
+    .right-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* Footer */
+    footer {
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    /* Theme toggle */
+    .theme-toggle {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: var(--bg-card);
+      border: 0.5px solid var(--border-default);
+      border-radius: 9999px;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 16px;
+      box-shadow: var(--shadow-sm);
+      z-index: 50;
+      transition: all var(--duration-normal) var(--ease-out);
+    }
+    .theme-toggle:hover { box-shadow: var(--shadow-card); }
+
+    /* Logged-in state */
+    .welcome-back {
+      text-align: center;
+      padding: 40px 20px;
+    }
+    .welcome-back h2 { font-size: 1.5rem; font-weight: 700; margin-bottom: 8px; }
+    .welcome-back p { color: var(--text-secondary); margin-bottom: 20px; }
+  </style>
+</head>
+<body>
+  <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle dark mode">🌙</button>
+
+  <div class="container">
+    <!-- Hero -->
+    <section class="hero">
+      <h1>Turn Any Topic Into a <span class="gradient">Library Event</span></h1>
+      <p>AI-powered promotional campaigns, escape rooms, event flyers, and document tools — built for how libraries actually work.</p>
+    </section>
+
+    <!-- Product Cards -->
+    <section class="products-grid">
+      <a href="https://launchpad.paperlab.xyz" class="product-card">
+        <div class="icon tint-indigo">🚀</div>
+        <h3>Library Launchpad</h3>
+        <p class="desc">AI-powered promotional campaigns. Display themes, shelf talkers, social posts, and signage — generated in seconds from any topic.</p>
+        <span class="tag tag-live">Live</span>
+      </a>
+
+      <a href="https://escape.paperlab.xyz" class="product-card">
+        <div class="icon tint-violet">🧩</div>
+        <h3>Escape Room Designer</h3>
+        <p class="desc">Complete escape room concepts with puzzle paths, prop inventories, clue sequences, and game master cheat sheets.</p>
+        <span class="tag tag-live">Live</span>
+      </a>
+
+      <a href="https://flyer.paperlab.xyz" class="product-card">
+        <div class="icon tint-rose">🎨</div>
+        <h3>Event Flyer Studio</h3>
+        <p class="desc">Describe your event, pick a vibe, get a print-ready flyer. AI-generated imagery with your library's info baked in.</p>
+        <span class="tag tag-live">Live</span>
+      </a>
+
+      <a href="#libpdf" class="product-card">
+        <div class="icon tint-emerald">📄</div>
+        <h3>LibPDF</h3>
+        <p class="desc">Merge, split, convert, OCR, and sign PDFs. A full document toolkit for staff and patrons — no IT setup required.</p>
+        <span class="tag tag-soon">Coming Soon</span>
+      </a>
+    </section>
+
+    <!-- Auth + Demo + Pricing Section -->
+    <section class="auth-demo-grid">
+      <!-- Auth Card -->
+      <div class="auth-card" id="auth-card">
+        <div id="auth-form-container">
+          <h2 id="auth-title">Welcome back</h2>
+          <p class="subtitle" id="auth-subtitle">Sign in to your campaigns</p>
+          <div id="auth-error" class="error-box" style="display:none"></div>
+          <form id="auth-form" onsubmit="handleAuth(event)">
+            <div class="form-group">
+              <label for="auth-email">Email</label>
+              <input type="email" id="auth-email" placeholder="you@library.org" required autocomplete="email">
+            </div>
+            <div class="form-group">
+              <label for="auth-password">Password</label>
+              <input type="password" id="auth-password" placeholder="••••••••" required minlength="6" autocomplete="current-password">
+            </div>
+            <button type="submit" class="btn-gradient" id="auth-btn">
+              <span id="auth-btn-text">Sign In</span>
+            </button>
+          </form>
+          <div class="trust-badges">
+            <span>No credit card required</span>
+            <span>·</span>
+            <span>Instant access</span>
+            <span>·</span>
+            <span>Cancel anytime</span>
+          </div>
+          <div class="toggle-mode">
+            <span id="toggle-text">Don't have an account?</span>
+            <button type="button" onclick="toggleAuthMode()" id="toggle-btn">Sign up free</button>
+          </div>
+          <div class="credit-info">
+            Campaigns <span>5 credits</span> · Rerolls <span>1 credit</span> · Escape Rooms <span>5 credits</span> · Flyers <span>6 credits</span>
+          </div>
+          <div class="free-credits-box">
+            <p>Get 10 free credits on signup</p>
+            <p>Enough for a full campaign + rerolls, or try any product</p>
+          </div>
+        </div>
+        <div id="welcome-back" class="welcome-back" style="display:none">
+          <h2>Welcome back!</h2>
+          <p>You're signed in as <span id="user-email"></span></p>
+          <a href="https://launchpad.paperlab.xyz" class="btn-gradient" style="display:inline-flex; width:auto; padding: 12px 32px;">Go to Launchpad →</a>
+        </div>
+      </div>
+
+      <!-- Right Stack: Demo + Pricing -->
+      <div class="right-stack">
+        <div class="demo-card">
+          <div class="icon-wrap tint-indigo">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+          </div>
+          <h3>Try the Demo</h3>
+          <p>See Alice in Wonderland escape rooms, promotional displays, and social media campaigns — no signup required.</p>
+          <a href="https://launchpad.paperlab.xyz?demo=1" class="btn-gradient">Browse Example Campaigns →</a>
+        </div>
+
+        <div class="pricing-card">
+          <p class="section-label">Simple Pricing</p>
+          <div class="free-box">
+            <p>10 free credits on signup</p>
+            <p>No card required · Enough for a full campaign</p>
+          </div>
+          <p class="tier-label">Monthly Plans <span class="best">Best Value</span></p>
+          <div class="pricing-row">
+            <span class="name">Creator <span class="detail">· 60 credits</span></span>
+            <span class="price">$12.99<span class="per">/mo</span> <span class="unit">$0.22/cr</span></span>
+          </div>
+          <div class="pricing-row">
+            <span class="name">Pro <span class="detail">· 150 credits</span></span>
+            <span class="price">$24.99<span class="per">/mo</span> <span class="unit">$0.17/cr</span></span>
+          </div>
+          <div class="pricing-row">
+            <span class="name">Institution <span class="detail">· 400 credits</span></span>
+            <span class="price">$49.99<span class="per">/mo</span> <span class="unit">$0.12/cr</span></span>
+          </div>
+          <div class="pricing-divider">
+            <p class="tier-label">Credit Packs <span style="color:var(--text-tertiary); font-weight:400;">· 90-day expiry</span></p>
+            <div class="pricing-row">
+              <span class="name">Small Pack <span class="detail">· 15 credits</span></span>
+              <span class="price">$7 <span class="unit">$0.47/cr</span></span>
+            </div>
+            <div class="pricing-row">
+              <span class="name">Large Pack <span class="detail">· 75 credits</span></span>
+              <span class="price">$25 <span class="unit">$0.33/cr</span></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+      <div class="container">
+        <div style="padding: 20px 24px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-secondary);"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
+          <span style="font-size: 0.875rem; color: var(--text-secondary);">Powered by <span style="color: var(--text-primary); font-weight: 500;">PaperLab</span></span>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    // Theme toggle
+    function toggleTheme() {
+      const html = document.documentElement;
+      const btn = document.querySelector('.theme-toggle');
+      if (html.getAttribute('data-theme') === 'dark') {
+        html.removeAttribute('data-theme');
+        btn.textContent = '🌙';
+      } else {
+        html.setAttribute('data-theme', 'dark');
+        btn.textContent = '☀️';
+      }
+    }
+
+    // Supabase init
+    const SUPABASE_URL = 'http://10.0.0.179:8001';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1YmxpYyIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNjk5OTk5OTk5LCJleHAiOjE4NTU1NTU1NTV9.public-anon-key-placeholder';
+    let supabase;
+    try {
+      supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    } catch (e) {
+      console.error('Supabase init failed:', e);
+    }
+
+    let isSignUp = false;
+
+    function toggleAuthMode() {
+      isSignUp = !isSignUp;
+      document.getElementById('auth-title').textContent = isSignUp ? 'Create your account' : 'Welcome back';
+      document.getElementById('auth-subtitle').textContent = isSignUp ? 'Get 10 free credits to try it out' : 'Sign in to your campaigns';
+      document.getElementById('auth-btn-text').textContent = isSignUp ? 'Create Account & Get 10 Free Credits' : 'Sign In';
+      document.getElementById('toggle-text').textContent = isSignUp ? 'Already have an account? ' : "Don't have an account? ";
+      document.getElementById('toggle-btn').textContent = isSignUp ? 'Sign in' : 'Sign up free';
+      document.getElementById('auth-password').setAttribute('autocomplete', isSignUp ? 'new-password' : 'current-password');
+      document.getElementById('auth-error').style.display = 'none';
+    }
+
+    async function handleAuth(e) {
+      e.preventDefault();
+      if (!supabase) {
+        showError('Auth service unavailable');
+        return;
+      }
+
+      const email = document.getElementById('auth-email').value;
+      const password = document.getElementById('auth-password').value;
+      const btn = document.getElementById('auth-btn');
+      const btnText = document.getElementById('auth-btn-text');
+
+      btn.disabled = true;
+      btnText.innerHTML = '<span class="spinner"></span> ' + (isSignUp ? 'Creating account…' : 'Signing in…');
+      document.getElementById('auth-error').style.display = 'none';
+
+      try {
+        let result;
+        if (isSignUp) {
+          result = await supabase.auth.signUp({ email, password });
+        } else {
+          result = await supabase.auth.signInWithPassword({ email, password });
+        }
+
+        if (result.error) {
+          showError(result.error.message);
+        } else if (result.data?.session) {
+          showWelcome(result.data.session.user.email);
+        } else if (isSignUp) {
+          showWelcome(email, true);
+        }
+      } catch (err) {
+        showError(err.message || 'Something went wrong');
+      } finally {
+        btn.disabled = false;
+        btnText.textContent = isSignUp ? 'Create Account & Get 10 Free Credits' : 'Sign In';
+      }
+    }
+
+    function showError(msg) {
+      const el = document.getElementById('auth-error');
+      el.textContent = msg;
+      el.style.display = 'block';
+    }
+
+    function showWelcome(email, confirm) {
+      document.getElementById('auth-form-container').style.display = 'none';
+      document.getElementById('welcome-back').style.display = 'block';
+      document.getElementById('user-email').textContent = email;
+      if (confirm) {
+        document.querySelector('.welcome-back h2').textContent = 'Check your email!';
+        document.querySelector('.welcome-back p').textContent = 'We sent a confirmation link to ' + email;
+      }
+    }
+
+    // Check existing session on load
+    async function checkSession() {
+      if (!supabase) return;
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (data?.session?.user) {
+          showWelcome(data.session.user.email);
+        }
+      } catch (e) {}
+    }
+    checkSession();
+  </script>
+</body>
+</html>

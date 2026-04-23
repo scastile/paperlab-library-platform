@@ -1,0 +1,27 @@
+services:
+  backend:
+    build: ./backend
+    env_file: ./backend/.env
+    volumes:
+      - ./data:/app/data
+    networks:
+      - default
+      - papercore
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "8200:80"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - default
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+networks:
+  default:
+  papercore:
+    external: true

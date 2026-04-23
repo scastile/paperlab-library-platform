@@ -1,0 +1,64 @@
+from contextlib import asynccontextmanager
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from dotenv import load_dotenv
+import os
+import logging
+
+load_dotenv()
+
+logger = logging.getLogger("launchpad")
+
+# Allowed origins — tighten CORS to known domains
+ALLOWED_ORIGINS = [
+    "http://10.0.0.179:8200",
+    "http://localhost:8200",
+    "http://localhost:5173",  # Vite dev server
+    os.getenv("BASE_URL", ""),  # From .env
+]
+# Filter out empty strings
+ALLOWED_ORIGINS = [o for o in ALLOWED_ORIGINS if o]
+
+from database import init_db
+from routes.generate import router as generate_router
+from routes.campaigns import router as campaigns_router
+from routes.credits import router as credits_router
+from services.stripe import handle_stripe_webhook
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    await init_db()
+    logger.info("Database initialized")
+    yield
+    # Shutdown — cleanup temp campaigns (import here to avoid circular)
+    from routes.generate import _temp_campaigns
+    _temp_campaigns.clear()
+    logger.info("Shutdown complete")
+
+
+app = FastAPI(title="Library Launchpad", version="0.1.0", lifespan=lifespan)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=ALLOWED_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.include_router(generate_router, prefix="/api")
+app.include_router(campaigns_router, prefix="/api")
+app.include_router(credits_router, prefix="/api")
+
+
+@app.post("/api/stripe/webhook")
+async def stripe_webhook(request: Request):
+    """Handle Stripe webhook events (payment success, subscription changes, etc.)"""
+    return await handle_stripe_webhook(request)
+
+
+@app.get("/api/health")
+async def health():
+    return {"status": "ok"}

@@ -1,0 +1,88 @@
+services:
+  # --- Library Launchpad ---
+  launchpad-backend:
+    build: ./apps/library-launchpad/backend
+    env_file: ./apps/library-launchpad/backend/.env
+    volumes:
+      - ./apps/library-launchpad/data:/app/data
+    networks:
+      - default
+      - papercore
+    restart: unless-stopped
+
+  launchpad-frontend:
+    build: ./apps/library-launchpad/frontend
+    ports:
+      - "8200:80"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - default
+    depends_on:
+      - launchpad-backend
+    restart: unless-stopped
+
+  # --- Escape Room Designer ---
+  escape-backend:
+    build: ./apps/escape-room-designer/backend
+    env_file: ./apps/escape-room-designer/backend/.env
+    volumes:
+      - ./apps/escape-room-designer/data:/app/data
+    networks:
+      - default
+      - papercore
+    restart: unless-stopped
+
+  escape-frontend:
+    build: ./apps/escape-room-designer/frontend
+    ports:
+      - "8203:80"
+    networks:
+      - default
+    depends_on:
+      - escape-backend
+    restart: unless-stopped
+
+  # --- Event Flyer Studio ---
+  flyer-backend:
+    build: ./apps/event-flyer-studio/backend
+    env_file: ./apps/event-flyer-studio/backend/.env
+    environment:
+      - AI_MODEL=google/gemini-2.5-flash-lite
+      - SUPABASE_URL=http://host.docker.internal:8001
+      - DB_PATH=/app/data/flyers.db
+      - LAUNCHPAD_URL=http://launchpad-backend:8000
+    volumes:
+      - ./apps/event-flyer-studio/data:/app/data
+    networks:
+      - default
+      - papercore
+    restart: unless-stopped
+
+  flyer-frontend:
+    build: ./apps/event-flyer-studio/frontend
+    ports:
+      - "8204:80"
+    networks:
+      - default
+    depends_on:
+      - flyer-backend
+    restart: unless-stopped
+
+  # --- LibPaper Landing Page ---
+  landing:
+    image: python:3.11-slim
+    working_dir: /app
+    volumes:
+      - ./apps/libpaper-landing:/app
+    command: python -m http.server 8202
+    ports:
+      - "8202:8202"
+    networks:
+      - default
+    restart: unless-stopped
+
+networks:
+  default:
+  papercore:
+    external: true
