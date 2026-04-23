@@ -56,7 +56,7 @@ services:
     build: ./apps/event-flyer-studio/backend
     env_file: ./apps/event-flyer-studio/backend/.env
     environment:
-      - AI_MODEL=google/gemini-2.5-flash-lite
+      - AI_MODEL=google/gemini-2.5-flash
       - SUPABASE_URL=http://host.docker.internal:8001
       - DB_PATH=/app/data/flyers.db
       - LAUNCHPAD_URL=http://launchpad-backend:8000

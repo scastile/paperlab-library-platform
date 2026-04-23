@@ -126,20 +126,20 @@ body {
 .btn-outline {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  border-radius: 10px;
+  font-weight: 500;
+  font-size: 0.875rem;
+  color: var(--text-primary);
+  border: 1px solid var(--border-default);
   background: transparent;
-  color: var(--accent-solid);
-  border: 1.5px solid var(--accent-solid);
-  padding: 11px 23px;
-  border-radius: var(--radius-sm);
-  font-size: 0.9rem;
-  font-weight: 600;
   font-family: inherit;
   cursor: pointer;
-  transition: all var(--duration-normal) var(--ease-out);
+  transition: background 0.15s ease;
   text-decoration: none;
 }
-.btn-outline:hover { background: var(--tint-indigo); }
+.btn-outline:hover { background: var(--bg-hover); }
 
 .section-label {
   font-size: 0.6875rem;

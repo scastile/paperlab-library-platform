@@ -82,6 +82,8 @@ export default function LandingPage() {
         return
       }
       navigate('/dashboard')
+      window.location.href = 'https://lib.paperlab.xyz/dashboard'
+      return
     } catch (e) {
       setError(e.message || 'Authentication failed')
     } finally {
@@ -111,7 +113,7 @@ export default function LandingPage() {
         {/* Product Cards */}
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-20">
           {SERVICES.map((s) => (
-            <ServiceCard key={s.title} {...s} />
+            <ServiceCard key={s.title} {...s} href={user ? s.href : undefined} />
           ))}
         </section>
 
@@ -125,6 +127,20 @@ export default function LandingPage() {
             <p className="text-sm text-secondary mb-6">
               {mode === 'signin' ? 'Sign in to your campaigns' : 'Get 10 free credits to try it out'}
             </p>
+
+            {/* Product Icon Graphic */}
+            <div className="flex items-center justify-start gap-2 mb-6">
+              {[
+                { Icon: Rocket, tint: 'bg-indigo-500/10' },
+                { Icon: Puzzle, tint: 'bg-violet-500/10' },
+                { Icon: Palette, tint: 'bg-rose-500/10' },
+                { Icon: FileText, tint: 'bg-emerald-500/10' },
+              ].map(({ Icon, tint }, i) => (
+                <div key={i} className={`w-10 h-10 rounded-full ${tint} flex items-center justify-center`}>
+                  <Icon className="w-5 h-5 text-[var(--accent-solid)]" />
+                </div>
+              ))}
+            </div>
 
             {error && (
               <div className="mb-4 px-4 py-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-sm">
@@ -189,13 +205,14 @@ export default function LandingPage() {
                 )}
               </p>
 
-              <div className="mt-auto pt-6">
-                <div className="bg-page rounded-lg p-4 text-center">
-                  <p className="font-semibold text-primary text-sm">Get 10 free credits on signup</p>
-                  <p className="text-secondary text-xs mt-1">Enough for a full campaign + rerolls, or try any product</p>
-                </div>
-              </div>
             </form>
+
+            <div className="mt-auto pt-6">
+              <div className="bg-page rounded-lg p-5 text-center">
+                <p className="font-semibold text-[var(--accent-solid)] text-base">Get 10 free credits on signup</p>
+                <p className="text-secondary text-sm mt-1.5">Enough for a full campaign + rerolls, or try any product</p>
+              </div>
+            </div>
           </div>
 
           {/* Right Stack: Demo + Pricing */}
@@ -216,10 +233,9 @@ export default function LandingPage() {
 
             {/* Pricing Card */}
             <div className="card-lift p-6">
-              <p className="text-xs font-semibold text-secondary uppercase tracking-wider mb-4">Simple Pricing</p>
-              <div className="bg-page rounded-lg p-3 text-center mb-4">
-                <p className="font-semibold text-primary text-sm">10 free credits on signup</p>
-                <p className="text-tertiary text-xs mt-0.5">No card required · Enough for a full campaign</p>
+              <div className="bg-page rounded-lg p-5 text-center mb-4">
+                <p className="font-semibold text-[var(--accent-solid)] text-base">10 free credits on signup</p>
+                <p className="text-secondary text-sm mt-1.5">No card required · Enough for a full campaign</p>
               </div>
 
               <p className="text-xs font-semibold text-secondary uppercase tracking-wider mb-2">

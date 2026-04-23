@@ -358,10 +358,10 @@ export default function App() {
                 return (
                   <a key={s.label} href={s.soon ? undefined : productUrl(s.href)}
                     onClick={s.soon ? (e) => e.preventDefault() : undefined}
-                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 no-underline ${s.soon ? 'opacity-40 cursor-not-allowed text-secondary' : s.active ? 'bg-hover text-primary' : 'text-secondary hover:text-primary hover:bg-hover'}`}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 no-underline ${s.soon ? 'opacity-40 cursor-not-allowed text-secondary' : s.active ? 'bg-hover text-primary' : 'text-secondary hover:text-primary hover:bg-hover'}`}
                     title={s.soon ? `${s.label} — Coming Soon` : s.label}>
-                    <span className={`w-6 h-6 rounded-md flex items-center justify-center ${s.tint}`}>
-                      <Icon className="w-3.5 h-3.5" style={{ color: s.color }} />
+                    <span className={`w-7 h-7 rounded-md flex items-center justify-center ${s.tint}`}>
+                      <Icon className="w-4 h-4" style={{ color: s.color }} />
                     </span>
                     <span className="hidden lg:inline">{s.label}</span>
                     {s.soon && <span className="text-[10px] text-tertiary ml-0.5">soon</span>}

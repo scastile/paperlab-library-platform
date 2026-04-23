@@ -3,7 +3,7 @@ services:
     build: ./backend
     env_file: ./backend/.env
     environment:
-      - AI_MODEL=google/gemini-2.5-flash-lite
+      - AI_MODEL=google/gemini-2.5-flash
       - SUPABASE_URL=http://host.docker.internal:8001
       - DB_PATH=/app/data/flyers.db
       - LAUNCHPAD_URL=http://library-launchpad-backend-1:8000

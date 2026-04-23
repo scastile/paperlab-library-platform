@@ -1,13 +1,10 @@
 export default function ServiceCard({ icon, title, description, href, onClick, tint, tag, tagClass }) {
   const Icon = icon
   const isSoon = tag === 'Coming Soon'
+  const isLink = href && href !== '#'
 
-  return (
-    <a
-      href={href}
-      onClick={isSoon ? (e) => e.preventDefault() : onClick}
-      className={`card-lift p-7 flex flex-col no-underline text-inherit ${isSoon ? 'opacity-60 cursor-not-allowed' : ''}`}
-    >
+  const content = (
+    <>
       <div className={`w-11 h-11 rounded-lg flex items-center justify-center mb-4 ${tint}`}>
         <Icon className="w-5 h-5" />
       </div>
@@ -16,6 +13,24 @@ export default function ServiceCard({ icon, title, description, href, onClick, t
       <span className={`inline-block mt-4 text-xs font-semibold px-2.5 py-1 rounded-full self-start ${tagClass}`}>
         {tag}
       </span>
+    </>
+  )
+
+  if (!isLink || isSoon) {
+    return (
+      <div className={`card-lift p-7 flex flex-col ${isSoon ? 'opacity-60' : ''}`}>
+        {content}
+      </div>
+    )
+  }
+
+  return (
+    <a
+      href={href}
+      onClick={onClick}
+      className="card-lift p-7 flex flex-col no-underline text-inherit"
+    >
+      {content}
     </a>
   )
 }

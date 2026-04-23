@@ -76,6 +76,7 @@ export function AuthProvider({ children }) {
   const signOut = async () => {
     const { error } = await supabase.auth.signOut()
     if (error) throw error
+    window.location.href = 'https://lib.paperlab.xyz/'
   }
 
   const getToken = useCallback(() => session?.access_token || null, [session])

@@ -496,9 +496,9 @@ function AppContent() {
   return (
     <div className="min-h-screen bg-page">
       <Header actions={
-        <button onClick={() => setShowSaved(!showSaved)} className="btn-outline py-2 px-3 text-sm">
+        <button onClick={() => setShowSaved(!showSaved)} className="btn-outline text-sm py-2 px-3">
           <FolderOpen className="w-4 h-4" />
-          My Rooms
+          Saved
         </button>
       } />
 
