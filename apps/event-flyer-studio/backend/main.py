@@ -29,6 +29,45 @@ ALLOWED_ORIGINS = [o for o in ALLOWED_ORIGINS if o]
 LAUNCHPAD_URL = os.getenv("LAUNCHPAD_URL", "http://library-launchpad-backend-1:8000")
 FAL_KEY = os.getenv("FAL_KEY", "")
 
+# Vibe-specific aesthetic anchors — front-loaded because Nano Banana (Gemini)
+# weighs opening phrases heaviest. This "sandbags" the style so it doesn't
+# get lost in a wordy subject description.
+VIBE_OVERRIDES = {
+    "Modern & Sleek": (
+        "Shot on 35mm film, minimalist, sharp focus, neutral palette, "
+        "high-end editorial style, clean lines, architectural."
+    ),
+    "Whimsical": (
+        "Magical realism, vibrant colors, soft diffused lighting, "
+        "storybook illustration style, gentle watercolor textures."
+    ),
+    "Vintage Scholastic": (
+        "Retro 1970s print aesthetic, halftone dots, aged paper texture, "
+        "muted earth tones, warm analog film grain."
+    ),
+    "High-Energy": (
+        "Dynamic action photography, motion blur, dramatic angles, "
+        "bold graphic elements, explosive composition, vivid saturated colors."
+    ),
+    "Calm & Relaxing": (
+        "Serene landscape photography, shallow depth of field, "
+        "soft natural light, pastel tones, tranquil composition."
+    ),
+    "Festive": (
+        "Rich celebratory photography, warm ambient lighting, "
+        "bokeh lights, deep jewel tones, joyful composition."
+    ),
+}
+
+# Mandatory negative constraints appended to every image call.
+# Simulates a negative prompt for models that don't support one natively.
+NEGATIVE_SUFFIX = (
+    "The image must be a background only. "
+    "Do not include any placeholder text, labels, UI elements, or borders. "
+    "No text, no letters, no words, no characters, no watermarks. "
+    "Ensure the text-safe zone is clear of complex details."
+)
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await init_db()
@@ -66,12 +105,20 @@ async def deduct_credits_via_launchpad(token: str, action: str, app_name: str = 
     
     return resp.json()
 
-async def generate_background_image(prompt: str) -> bytes:
-    """Generate an image using OpenRouter Gemini 2.5 Flash Image. Returns PNG bytes."""
+async def generate_background_image(prompt: str, vibe: str = "Modern & Sleek") -> bytes:
+    """Generate an image using OpenRouter Gemini 3.1 Flash Image. Returns PNG bytes."""
     api_key = os.getenv("OPENROUTER_API_KEY", "")
     if not api_key:
         raise RuntimeError("OPENROUTER_API_KEY not configured")
-    
+
+    # Build the "Prompt Sandwich" — Nano Banana weighs opening phrases heaviest.
+    vibe_prefix = VIBE_OVERRIDES.get(vibe, "")
+    wrapper = (
+        f"{vibe_prefix} "
+        f"A high-quality professional photograph or illustration for a background: {prompt}. "
+        f"Minimalist, clean composition. {NEGATIVE_SUFFIX}"
+    )
+
     async with httpx.AsyncClient() as client:
         resp = await client.post(
             "https://openrouter.ai/api/v1/chat/completions",
@@ -83,22 +130,22 @@ async def generate_background_image(prompt: str) -> bytes:
             },
             json={
                 "model": "google/gemini-3.1-flash-image-preview",
-                "messages": [{"role": "user", "content": f"Generate a flyer background image: {prompt}"}],
+                "messages": [{"role": "user", "content": wrapper}],
                 "modalities": ["image", "text"],
                 "max_tokens": 4096,
                 "image_config": {"aspect_ratio": "4:3", "image_size": "1K"},
             },
             timeout=120.0
         )
-    
+
     if resp.status_code != 200:
         raise RuntimeError(f"Image generation error {resp.status_code}: {resp.text[:500]}")
-    
+
     data = resp.json()
     images = data.get("choices", [{}])[0].get("message", {}).get("images", [])
     if not images:
         raise RuntimeError("No image returned from generation API")
-    
+
     image_url = images[0].get("image_url", {}).get("url", "")
     if image_url.startswith("data:image"):
         # Base64 encoded
@@ -141,7 +188,7 @@ async def generate(req: GenerateRequest, auth: tuple = Depends(get_current_user_
     image_path = None
     if req.include_image:
         try:
-            img_bytes = await generate_background_image(content["image_prompt"])
+            img_bytes = await generate_background_image(content["image_prompt"], vibe=req.vibe)
             with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as f:
                 f.write(img_bytes)
                 image_path = f.name
