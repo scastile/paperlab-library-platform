@@ -1,146 +1,197 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
-import { Plus } from 'lucide-react'
+import { Plus, X, Sparkles, Zap } from 'lucide-react'
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api'
 
 const PACKS = [
-  { id: 'small', name: 'Small Pack', credits: 15, price: 7 },
-  { id: 'large', name: 'Large Pack', credits: 75, price: 25 },
+  { id: 'small', name: 'Small Pack', credits: 20, price: 7, desc: 'For occasional use' },
+  { id: 'medium', name: 'Medium Pack', credits: 50, price: 15, desc: 'Expires in 90 days' },
+  { id: 'large', name: 'Large Pack', credits: 120, price: 30, desc: 'Expires in 90 days' },
 ]
 
 const SUBS = [
-  { id: 'basic', name: 'Basic', credits: 50, price: 12.99 },
-  { id: 'pro', name: 'Pro', credits: 100, price: 19.99 },
-  { id: 'premium', name: 'Premium', credits: 200, price: 39.99 },
+  { id: 'creator', name: 'Creator', credits: 60, price: 12.99, desc: '60 credits/month', perCredit: 0.22 },
+  { id: 'pro', name: 'Pro', credits: 150, price: 24.99, desc: '150 credits/month + rollover', perCredit: 0.17 },
+  { id: 'institution', name: 'Institution', credits: 400, price: 49.99, desc: '400 credits/month + rollover', perCredit: 0.12 },
 ]
 
 export default function CreditBadge() {
-  const { user, getToken } = useAuth()
+  const { user, session } = useAuth()
   const [credits, setCredits] = useState(null)
-  const [showMenu, setShowMenu] = useState(false)
+  const [showModal, setShowModal] = useState(false)
   const [purchasing, setPurchasing] = useState(null)
-
-  const fetchCredits = async () => {
-    const token = getToken?.()
-    if (!token) return
-    try {
-      const res = await fetch(`${API_BASE}/credits/balance`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      if (res.ok) {
-        const data = await res.json()
-        setCredits(data)
-      }
-    } catch (e) {
-      console.error('Credit fetch failed:', e)
-    }
-  }
+  const [error, setError] = useState(null)
 
   useEffect(() => {
-    if (user) fetchCredits()
+    if (!user || !session?.access_token) {
+      setError('Not authenticated')
+      return
+    }
+
+    let cancelled = false
+    setError(null)
+
+    const fetchCredits = async () => {
+      try {
+        const url = `${API_BASE}/credits/balance`
+        const token = session.access_token
+        console.log('[CreditBadge] Fetching credits from:', url, 'token length:', token?.length)
+        const res = await fetch(url, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        console.log('[CreditBadge] Response status:', res.status)
+        if (!res.ok) {
+          const text = await res.text()
+          console.error('[CreditBadge] Fetch failed:', res.status, text)
+          if (!cancelled) setError(`API error ${res.status}: ${text.slice(0, 200)}`)
+          return
+        }
+        const data = await res.json()
+        console.log('[CreditBadge] Credits loaded:', data)
+        if (!cancelled) {
+          setCredits(data)
+          setError(null)
+        }
+      } catch (e) {
+        console.error('[CreditBadge] Fetch error:', e)
+        if (!cancelled) setError(`Network error: ${e.message}`)
+      }
+    }
+
+    fetchCredits()
     const id = setInterval(fetchCredits, 30000)
-    return () => clearInterval(id)
-  }, [user, getToken])
+    return () => {
+      cancelled = true
+      clearInterval(id)
+    }
+  }, [user, session?.access_token])
 
   const handlePurchase = async (packId, type = 'pack') => {
-    const token = getToken?.()
-    if (!token) return
+    if (!session?.access_token) return
     setPurchasing(packId)
     try {
       const res = await fetch(`${API_BASE}/credits/checkout`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify({ pack_id: packId, type }),
+        body: JSON.stringify({ pack_id: packId, type, return_url: window.location.href }),
       })
       const data = await res.json()
       if (data.url) {
         window.location.href = data.url
+      } else {
+        setError(`Checkout failed: ${JSON.stringify(data).slice(0, 200)}`)
       }
     } catch (e) {
-      console.error('Checkout failed:', e)
+      setError(`Checkout error: ${e.message}`)
     } finally {
       setPurchasing(null)
     }
   }
 
   return (
-    <div className="relative">
+    <>
       <button
-        onClick={() => setShowMenu(!showMenu)}
+        onClick={() => setShowModal(true)}
         className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-page border border-default text-sm font-medium text-primary hover:bg-hover transition-all duration-200"
       >
-        <span>{credits?.total_available ?? '—'} credits</span>
+        <span>{credits?.total_available ?? (error ? '!' : '—')} credits</span>
         <span className="flex items-center justify-center w-5 h-5 rounded-full bg-[var(--accent-solid)] text-white">
           <Plus className="w-3 h-3" />
         </span>
       </button>
 
-      {showMenu && (
-        <>
-          <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
-          <div className="absolute right-0 top-full mt-2 w-72 bg-card border border-default rounded-xl shadow-card-hover z-50 p-4 space-y-4">
-            {credits && (
-              <div>
-                <p className="text-secondary text-xs">Current Balance</p>
-                <p className="text-2xl font-bold text-primary">
-                  {credits.total_available} <span className="text-sm font-normal text-tertiary">credits</span>
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)' }}>
+          <div className="bg-card rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto overscroll-contain border border-default" style={{ boxShadow: 'var(--shadow-modal)', backgroundColor: 'var(--bg-card)' }}>
+            {/* Header */}
+            <div className="sticky top-0 bg-card px-6 py-4 border-b border-subtle flex items-center justify-between" style={{ backgroundColor: 'var(--bg-card)' }}>
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-5 h-5 accent-solid" />
+                <h2 className="text-xl font-bold text-primary">Get More Credits</h2>
+              </div>
+              <button onClick={() => setShowModal(false)} aria-label="Close modal" className="p-2 hover:bg-hover rounded-lg transition-all duration-250 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-solid)]">
+                <X className="w-5 h-5 text-tertiary" />
+              </button>
+            </div>
+
+            <div className="px-6 py-6 space-y-8">
+              {/* Error display */}
+              {error && (
+                <div className="bg-red-500/10 border border-red-500/20 text-red-500 rounded-lg p-4 text-sm">
+                  <p className="font-semibold">Error loading credits</p>
+                  <p className="mt-1">{error}</p>
+                </div>
+              )}
+
+              {/* Current Balance */}
+              <div className="bg-page rounded-xl p-5">
+                <p className="text-secondary text-sm">Your Current Balance</p>
+                <p className="text-3xl font-bold text-primary mt-1">
+                  {credits?.total_available ?? 0} <span className="text-lg font-normal text-tertiary">credits</span>
                 </p>
-                {credits.tier && credits.tier !== 'free' && (
-                  <p className="text-xs text-[var(--accent-solid)] mt-0.5">
-                    {credits.tier} plan: {credits.monthly_remaining}/{credits.monthly_allocation} monthly
+                {credits?.tier && credits.tier !== 'free' && (
+                  <p className="accent-solid text-sm mt-1">
+                    {credits.tier} plan: {credits.monthly_remaining}/{credits.monthly_allocation} monthly credits remaining
                   </p>
                 )}
               </div>
-            )}
 
-            <div>
-              <p className="text-xs font-semibold text-secondary uppercase tracking-wide mb-2">Subscriptions</p>
-              <div className="space-y-2">
-                {SUBS.map((sub) => (
-                  <button
-                    key={sub.id}
-                    onClick={() => handlePurchase(sub.id, 'subscription')}
-                    disabled={purchasing === sub.id}
-                    className="w-full flex items-center justify-between px-3 py-2 rounded-lg bg-page hover:bg-hover transition-colors text-left disabled:opacity-50"
-                  >
-                    <div>
-                      <p className="text-sm font-medium text-primary">{sub.name}</p>
-                      <p className="text-xs text-tertiary">{sub.credits} credits/mo</p>
-                    </div>
-                    <span className="text-sm font-bold text-[var(--accent-solid)]">
-                      ${sub.price}<span className="text-xs font-normal text-tertiary">/mo</span>
-                    </span>
-                  </button>
-                ))}
+              {/* Subscriptions */}
+              <div>
+                <h3 className="text-lg font-semibold text-primary mb-4 flex items-center gap-2">
+                  <Zap className="w-5 h-5 accent-solid" /> Monthly Plans
+                </h3>
+                <div className="grid grid-cols-3 gap-4">
+                  {SUBS.map(sub => (
+                    <button
+                      key={sub.id}
+                      onClick={() => handlePurchase(sub.id, 'subscription')}
+                      disabled={purchasing === sub.id}
+                      className={`card-lift p-5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-solid)] disabled:opacity-50 ${sub.id === 'pro' ? 'ring-2 ring-[var(--accent-solid)]' : ''}`}
+                    >
+                      {sub.id === 'pro' && (
+                        <span className="inline-block text-xs font-semibold px-2 py-0.5 rounded-full mb-2" style={{ background: 'var(--accent-solid)', color: 'white' }}>Best Value</span>
+                      )}
+                      <div className="flex justify-between items-start">
+                        <span className="font-semibold text-primary">{sub.name}</span>
+                        <span className="accent-solid font-bold">${sub.price}<span className="text-tertiary text-sm font-normal">/mo</span></span>
+                      </div>
+                      <p className="text-secondary text-sm mt-1">{sub.desc}</p>
+                      <p className="text-tertiary text-xs mt-1">${sub.perCredit.toFixed(2)}/credit</p>
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
 
-            <div>
-              <p className="text-xs font-semibold text-secondary uppercase tracking-wide mb-2">Credit Packs</p>
-              <div className="space-y-2">
-                {PACKS.map((pack) => (
-                  <button
-                    key={pack.id}
-                    onClick={() => handlePurchase(pack.id, 'pack')}
-                    disabled={purchasing === pack.id}
-                    className="w-full flex items-center justify-between px-3 py-2 rounded-lg bg-page hover:bg-hover transition-colors text-left disabled:opacity-50"
-                  >
-                    <div>
-                      <p className="text-sm font-medium text-primary">{pack.name}</p>
-                      <p className="text-xs text-tertiary">{pack.credits} credits</p>
-                    </div>
-                    <span className="text-sm font-bold text-[var(--accent-solid)]">${pack.price}</span>
-                  </button>
-                ))}
+              {/* Credit Packs */}
+              <div>
+                <h3 className="text-lg font-semibold text-primary mb-4">Credit Packs</h3>
+                <div className="grid grid-cols-3 gap-4">
+                  {PACKS.map(pack => (
+                    <button
+                      key={pack.id}
+                      onClick={() => handlePurchase(pack.id, 'pack')}
+                      disabled={purchasing === pack.id}
+                      className="card-lift p-5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-solid)] disabled:opacity-50"
+                    >
+                      <div className="flex justify-between items-start">
+                        <span className="font-semibold text-primary">{pack.name}</span>
+                        <span className="accent-solid font-bold">${pack.price}</span>
+                      </div>
+                      <p className="text-secondary text-sm mt-1">{pack.credits} credits</p>
+                      <p className="text-tertiary text-xs mt-1">${(pack.price / pack.credits).toFixed(2)}/credit</p>
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
-        </>
+        </div>
       )}
-    </div>
+    </>
   )
 }

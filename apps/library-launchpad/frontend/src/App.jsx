@@ -8,7 +8,7 @@ import WelcomeModal from './components/WelcomeModal'
 import Login from './components/Login'
 import GenerationStatus from './components/GenerationStatus'
 import { useAuth } from './context/AuthContext'
-import { LogOut, Lock, Sparkles, CreditCard, Trash2, Sun, Moon, ChevronDown, ChevronRight } from 'lucide-react'
+import { LogOut, Lock, Sparkles, CreditCard, Trash2, Sun, Moon, ChevronDown, ChevronRight, Rocket, Puzzle, Palette, FileText } from 'lucide-react'
 import { getRandomExample } from './data/exampleCampaigns'
 import { featuredCampaigns } from './data/exampleCampaigns'
 import Footer from './components/Footer'
@@ -24,7 +24,7 @@ async function apiCall(path, options = {}, getToken) {
 }
 
 export default function App() {
-  const { user, loading: authLoading, getToken, signOut } = useAuth()
+  const { user, session, loading: authLoading, getToken, signOut } = useAuth()
   const [guestMode, setGuestMode] = useState(false)
   const [campaign, setCampaign] = useState(null)
   const [loading, setLoading] = useState(false)
@@ -330,16 +330,45 @@ export default function App() {
     }} />
   }
 
+  const productUrl = (url) => {
+    if (!session?.access_token) return url
+    return `${url}/#access_token=${session.access_token}&refresh_token=${session.refresh_token}`
+  }
+
+  const SERVICES = [
+    { icon: Rocket, label: 'Launchpad', href: 'https://launchpad.paperlab.xyz', tint: 'tint-indigo', color: '#6366f1', active: true },
+    { icon: Puzzle, label: 'Escape Room', href: 'https://escape.paperlab.xyz', tint: 'tint-violet', color: '#8b5cf6' },
+    { icon: Palette, label: 'Flyer Studio', href: 'https://flyer.paperlab.xyz', tint: 'tint-rose', color: '#f43f5e' },
+    { icon: FileText, label: 'LibPDF', href: '#', tint: 'tint-emerald', color: '#10b981', soon: true },
+  ]
+
   return (
-    <>
-    <div className="min-h-screen bg-page px-4 py-8 md:px-8 md:py-12 max-w-7xl mx-auto">
+    <div className="min-h-screen bg-page">
       {/* Header */}
-      <header className="mb-10">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 gap-3">
+      <header className="border-b border-default bg-card">
+        <div className="max-w-7xl mx-auto px-4 md:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-primary tracking-tight">
-              Turn Any Topic Into a <span style={{background: 'var(--accent-gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'}}>Library Event</span>
-            </h1>
+            <a href={productUrl('https://lib.paperlab.xyz')} className="flex items-center gap-2.5 text-primary font-bold text-lg no-underline flex-shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{color:'var(--accent-solid)'}}><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+              <span>PaperLab</span>
+            </a>
+            <nav className="hidden md:flex items-center gap-1 ml-2">
+              {SERVICES.map((s) => {
+                const Icon = s.icon
+                return (
+                  <a key={s.label} href={s.soon ? undefined : productUrl(s.href)}
+                    onClick={s.soon ? (e) => e.preventDefault() : undefined}
+                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 no-underline ${s.soon ? 'opacity-40 cursor-not-allowed text-secondary' : s.active ? 'bg-hover text-primary' : 'text-secondary hover:text-primary hover:bg-hover'}`}
+                    title={s.soon ? `${s.label} — Coming Soon` : s.label}>
+                    <span className={`w-6 h-6 rounded-md flex items-center justify-center ${s.tint}`}>
+                      <Icon className="w-3.5 h-3.5" style={{ color: s.color }} />
+                    </span>
+                    <span className="hidden lg:inline">{s.label}</span>
+                    {s.soon && <span className="text-[10px] text-tertiary ml-0.5">soon</span>}
+                  </a>
+                )
+              })}
+            </nav>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
             <button
@@ -380,18 +409,22 @@ export default function App() {
           )}
           </div>
         </div>
-        <p className="text-secondary max-w-2xl">
-          Transform your library's engagement with AI-powered promotional campaigns.
-          Generate innovative cross-promotion ideas for books, movies, games, and events.
-        </p>
-        <div className="mt-4 text-sm">
-          <div className="flex gap-6 flex-wrap">
-            <span className="accent-solid font-semibold">25,000+ Ideas Generated</span>
-            <span className="accent-solid font-semibold">450+ Libraries Using</span>
-            <span className="accent-solid font-semibold">98% Satisfaction</span>
+      </header>
+
+      <div className="max-w-7xl mx-auto px-4 md:px-8 py-8 md:py-12">
+        <div className="mb-10">
+          <p className="text-secondary max-w-2xl">
+            Transform your library's engagement with AI-powered promotional campaigns.
+            Generate innovative cross-promotion ideas for books, movies, games, and events.
+          </p>
+          <div className="mt-4 text-sm">
+            <div className="flex gap-6 flex-wrap">
+              <span className="accent-solid font-semibold">25,000+ Ideas Generated</span>
+              <span className="accent-solid font-semibold">450+ Libraries Using</span>
+              <span className="accent-solid font-semibold">98% Satisfaction</span>
+            </div>
           </div>
         </div>
-      </header>
 
       {guestMode && (
         <div className="mb-8 p-5 bg-card border border-default rounded-xl flex items-center justify-between gap-4 flex-wrap" style={{boxShadow: 'var(--shadow-sm)'}}>
@@ -650,11 +683,11 @@ export default function App() {
         />
       )}
 
-    </div>
+      </div>
 
-    {/* Footer — outside main container to match card edges */}
-    <Footer />
-    </>
+      {/* Footer — outside main container to match card edges */}
+      <Footer />
+    </div>
   )
 }
 

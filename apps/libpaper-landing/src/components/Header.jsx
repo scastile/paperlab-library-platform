@@ -1,4 +1,3 @@
-import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { Rocket, Puzzle, Palette, FileText, LogOut } from 'lucide-react'
 import CreditBadge from './CreditBadge'
@@ -11,12 +10,11 @@ const SERVICES = [
 ]
 
 export default function Header() {
-  const { user, signOut } = useAuth()
-  const navigate = useNavigate()
+  const { user, signOut, session } = useAuth()
 
-  const handleLogout = async () => {
-    await signOut()
-    navigate('/')
+  const productUrl = (url) => {
+    if (!session?.access_token) return url
+    return `${url}/#access_token=${session.access_token}&refresh_token=${session.refresh_token}`
   }
 
   return (
@@ -35,7 +33,7 @@ export default function Header() {
             return (
               <a
                 key={s.label}
-                href={s.href}
+                href={s.soon ? undefined : productUrl(s.href)}
                 onClick={s.soon ? (e) => e.preventDefault() : undefined}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 no-underline ${
                   s.soon
@@ -59,7 +57,7 @@ export default function Header() {
           {user && <CreditBadge />}
           {user && (
             <button
-              onClick={handleLogout}
+              onClick={signOut}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-secondary hover:text-primary hover:bg-hover transition-all duration-200"
             >
               <LogOut className="w-4 h-4" />

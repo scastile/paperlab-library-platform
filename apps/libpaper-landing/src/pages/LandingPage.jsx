@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { Loader2, BookOpen } from 'lucide-react'
 import ServiceCard from '../components/ServiceCard'
 import { Rocket, Puzzle, Palette, FileText } from 'lucide-react'
+import { buildProductUrl } from '../lib/auth-bridge'
 
 const SERVICES = [
   {
@@ -45,8 +46,9 @@ const SERVICES = [
 ]
 
 export default function LandingPage() {
-  const { user, signIn, signUp } = useAuth()
+  const { user, signIn, signUp, session } = useAuth()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const [mode, setMode] = useState('signin')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -54,6 +56,11 @@ export default function LandingPage() {
   const [loading, setLoading] = useState(false)
 
   if (user) {
+    const redirect = searchParams.get('redirect')
+    if (redirect && redirect.includes('paperlab.xyz')) {
+      window.location.href = buildProductUrl(redirect, session)
+      return null
+    }
     navigate('/dashboard')
     return null
   }
@@ -63,10 +70,16 @@ export default function LandingPage() {
     setError('')
     setLoading(true)
     try {
+      let data
       if (mode === 'signin') {
-        await signIn(email, password)
+        data = await signIn(email, password)
       } else {
-        await signUp(email, password)
+        data = await signUp(email, password)
+      }
+      const redirect = searchParams.get('redirect')
+      if (redirect && redirect.includes('paperlab.xyz')) {
+        window.location.href = buildProductUrl(redirect, data.session)
+        return
       }
       navigate('/dashboard')
     } catch (e) {
@@ -233,12 +246,16 @@ export default function LandingPage() {
                 </p>
                 <div className="space-y-1.5 text-sm">
                   <div className="flex justify-between items-baseline">
-                    <span className="text-secondary">Small Pack <span className="text-tertiary">· 15 credits</span></span>
+                    <span className="text-secondary">Small Pack <span className="text-tertiary">· 20 credits</span></span>
                     <span className="font-semibold text-primary">$7</span>
                   </div>
                   <div className="flex justify-between items-baseline">
-                    <span className="text-secondary">Large Pack <span className="text-tertiary">· 75 credits</span></span>
-                    <span className="font-semibold text-primary">$25</span>
+                    <span className="text-secondary">Medium Pack <span className="text-tertiary">· 50 credits</span></span>
+                    <span className="font-semibold text-primary">$15</span>
+                  </div>
+                  <div className="flex justify-between items-baseline">
+                    <span className="text-secondary">Large Pack <span className="text-tertiary">· 120 credits</span></span>
+                    <span className="font-semibold text-primary">$30</span>
                   </div>
                 </div>
               </div>

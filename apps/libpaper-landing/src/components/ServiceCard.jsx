@@ -1,11 +1,11 @@
-export default function ServiceCard({ icon, title, description, href, tint, tag, tagClass }) {
+export default function ServiceCard({ icon, title, description, href, onClick, tint, tag, tagClass }) {
   const Icon = icon
   const isSoon = tag === 'Coming Soon'
 
   return (
     <a
       href={href}
-      onClick={isSoon ? (e) => e.preventDefault() : undefined}
+      onClick={isSoon ? (e) => e.preventDefault() : onClick}
       className={`card-lift p-7 flex flex-col no-underline text-inherit ${isSoon ? 'opacity-60 cursor-not-allowed' : ''}`}
     >
       <div className={`w-11 h-11 rounded-lg flex items-center justify-center mb-4 ${tint}`}>

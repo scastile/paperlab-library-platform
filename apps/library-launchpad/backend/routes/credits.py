@@ -66,6 +66,7 @@ async def get_credit_packs():
 class CheckoutRequest(BaseModel):
     pack_id: str
     type: str = "pack"  # 'pack' or 'subscription'
+    return_url: str = ""  # URL to return to after checkout
 
 
 @router.post("/credits/checkout")
@@ -75,9 +76,9 @@ async def create_checkout(
 ):
     """Create Stripe Checkout session for credit pack or subscription."""
     if req.type == "subscription":
-        checkout_url = await stripe_service.create_subscription_checkout(user_id, req.pack_id)
+        checkout_url = await stripe_service.create_subscription_checkout(user_id, req.pack_id, req.return_url)
     else:
-        checkout_url = await stripe_service.create_checkout_session(user_id, req.pack_id)
+        checkout_url = await stripe_service.create_checkout_session(user_id, req.pack_id, req.return_url)
     
     if checkout_url:
         return {"url": checkout_url}

@@ -2,14 +2,15 @@ import { useState, useEffect } from 'react'
 import { X, Sparkles, Zap } from 'lucide-react'
 
 const CREDIT_PACKS = [
-  { id: 'small', credits: 15, price: 7, name: 'Small Pack', desc: 'For occasional use' },
-  { id: 'large', credits: 75, price: 25, name: 'Large Pack', desc: 'Expires in 90 days' },
+  { id: 'small', credits: 20, price: 7, name: 'Small Pack', desc: 'For occasional use' },
+  { id: 'medium', credits: 50, price: 15, name: 'Medium Pack', desc: 'Expires in 90 days' },
+  { id: 'large', credits: 120, price: 30, name: 'Large Pack', desc: 'Expires in 90 days' },
 ]
 
 const SUBSCRIPTIONS = [
-  { id: 'basic', credits: 50, price: 12.99, name: 'Basic', desc: '50 credits/month', perCredit: 0.26 },
-  { id: 'pro', credits: 100, price: 19.99, name: 'Pro', desc: '100 credits/month + rollover', perCredit: 0.20 },
-  { id: 'premium', credits: 200, price: 39.99, name: 'Premium', desc: '200 credits/month + rollover', perCredit: 0.20 },
+  { id: 'creator', credits: 60, price: 12.99, name: 'Creator', desc: '60 credits/month', perCredit: 0.22 },
+  { id: 'pro', credits: 150, price: 24.99, name: 'Pro', desc: '150 credits/month + rollover', perCredit: 0.17 },
+  { id: 'institution', credits: 400, price: 49.99, name: 'Institution', desc: '400 credits/month + rollover', perCredit: 0.12 },
 ]
 
 export default function CreditsModal({ credits, onClose, getToken }) {
@@ -36,7 +37,7 @@ export default function CreditsModal({ credits, onClose, getToken }) {
       const res = await fetch(`${import.meta.env.VITE_API_URL || '/api'}/credits/checkout`, {
         method: 'POST',
         headers,
-        body: JSON.stringify({ pack_id: packId, type }),
+        body: JSON.stringify({ pack_id: packId, type, return_url: window.location.href }),
       })
       const data = await res.json()
       if (data.url) {

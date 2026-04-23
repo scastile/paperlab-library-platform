@@ -33,12 +33,15 @@ for _tier, _info in SUBSCRIPTION_PRICES.items():
     _PRICE_TO_TIER[_info["stripe_price_id"]] = _tier
 
 
-async def create_checkout_session(user_id: str, item: str) -> str:
+async def create_checkout_session(user_id: str, item: str, return_url: str = "") -> str:
     """Create a Stripe Checkout session for credit pack purchase."""
     if item not in PACK_PRICES:
         raise HTTPException(400, f"Unknown pack: {item}")
     
     pack = PACK_PRICES[item]
+    
+    # Use provided return URL or fall back to BASE_URL
+    base = return_url or BASE_URL
     
     session = stripe.checkout.Session.create(
         payment_method_types=["card"],
@@ -47,8 +50,8 @@ async def create_checkout_session(user_id: str, item: str) -> str:
             "quantity": 1,
         }],
         mode="payment",
-        success_url=f"{BASE_URL}/credits/success?session_id={{CHECKOUT_SESSION_ID}}",
-        cancel_url=f"{BASE_URL}/credits/cancel",
+        success_url=f"{base}/credits/success?session_id={{CHECKOUT_SESSION_ID}}",
+        cancel_url=f"{base}/credits/cancel",
         metadata={
             "user_id": user_id,
             "item": item,
@@ -59,12 +62,15 @@ async def create_checkout_session(user_id: str, item: str) -> str:
     return session.url
 
 
-async def create_subscription_checkout(user_id: str, tier: str) -> str:
+async def create_subscription_checkout(user_id: str, tier: str, return_url: str = "") -> str:
     """Create a Stripe Checkout session for monthly subscription."""
     if tier not in SUBSCRIPTION_PRICES:
         raise HTTPException(400, f"Unknown tier: {tier}")
     
     sub = SUBSCRIPTION_PRICES[tier]
+    
+    # Use provided return URL or fall back to BASE_URL
+    base = return_url or BASE_URL
     
     session = stripe.checkout.Session.create(
         payment_method_types=["card"],
@@ -73,8 +79,8 @@ async def create_subscription_checkout(user_id: str, tier: str) -> str:
             "quantity": 1,
         }],
         mode="subscription",
-        success_url=f"{BASE_URL}/subscription/success?session_id={{CHECKOUT_SESSION_ID}}",
-        cancel_url=f"{BASE_URL}/subscription/cancel",
+        success_url=f"{base}/subscription/success?session_id={{CHECKOUT_SESSION_ID}}",
+        cancel_url=f"{base}/subscription/cancel",
         metadata={
             "user_id": user_id,
             "tier": tier,

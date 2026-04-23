@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import Header from '../components/Header'
 import ServiceCard from '../components/ServiceCard'
 import { Rocket, Puzzle, Palette, FileText } from 'lucide-react'
+import { buildProductUrl } from '../lib/auth-bridge'
 
 const SERVICES = [
   {
@@ -45,7 +46,7 @@ const SERVICES = [
 ]
 
 export default function Dashboard() {
-  const { user, loading } = useAuth()
+  const { user, loading, session } = useAuth()
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -53,6 +54,11 @@ export default function Dashboard() {
       navigate('/')
     }
   }, [user, loading, navigate])
+
+  const goToProduct = (url) => (e) => {
+    e.preventDefault()
+    window.location.href = buildProductUrl(url, session)
+  }
 
   if (loading || !user) {
     return (
@@ -63,10 +69,10 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-page">
+    <div className="min-h-screen bg-page flex flex-col">
       <Header />
 
-      <main className="max-w-6xl mx-auto px-6 py-10">
+      <main className="flex-1 max-w-6xl mx-auto px-6 py-10 w-full">
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-primary">Your Library Tools</h1>
           <p className="text-secondary mt-1">Choose a product to get started</p>
@@ -74,7 +80,7 @@ export default function Dashboard() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {SERVICES.map((s) => (
-            <ServiceCard key={s.title} {...s} />
+            <ServiceCard key={s.title} {...s} onClick={s.tag === 'Live' ? goToProduct(s.href) : undefined} />
           ))}
         </div>
 
@@ -90,7 +96,7 @@ export default function Dashboard() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-subtle mt-12">
+      <footer className="border-t border-subtle">
         <div className="max-w-6xl mx-auto px-6 py-5 flex items-center justify-center gap-2 text-sm text-secondary">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
           <span>Powered by <span className="text-primary font-medium">PaperLab</span></span>

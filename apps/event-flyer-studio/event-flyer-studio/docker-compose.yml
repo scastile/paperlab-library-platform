@@ -1,0 +1,30 @@
+services:
+  backend:
+    build: ./backend
+    env_file: ./backend/.env
+    environment:
+      - AI_MODEL=google/gemini-2.5-flash-lite
+      - SUPABASE_URL=http://host.docker.internal:8001
+      - DB_PATH=/app/data/flyers.db
+      - LAUNCHPAD_URL=http://library-launchpad-backend-1:8000
+    volumes:
+      - /opt/projects/event-flyer-studio/data:/app/data
+    networks:
+      - default
+      - papercore
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "0.0.0.0:8204:80"
+    networks:
+      - default
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+networks:
+  default:
+  papercore:
+    external: true

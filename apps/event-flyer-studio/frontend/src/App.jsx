@@ -6,6 +6,7 @@ import {
   Home, Printer, FileImage
 } from 'lucide-react'
 import { useAuth, AuthProvider } from './context/AuthContext'
+import Header from './components/Header'
 
 const API_BASE = '/api'
 
@@ -43,20 +44,6 @@ async function apiCall(path, options = {}, getToken) {
     throw new Error(err.detail || `Request failed (${res.status})`)
   }
   return res
-}
-
-function ThemeToggle() {
-  const [theme, setTheme] = useState(() => localStorage.getItem('efs-theme') || 'light')
-  useEffect(() => {
-    if (theme === 'dark') document.documentElement.setAttribute('data-theme', 'dark')
-    else document.documentElement.removeAttribute('data-theme')
-    localStorage.setItem('efs-theme', theme)
-  }, [theme])
-  return (
-    <button className="theme-toggle" onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')} aria-label="Toggle theme">
-      {theme === 'dark' ? '☀️' : '🌙'}
-    </button>
-  )
 }
 
 function Login() {
@@ -415,7 +402,7 @@ function SavedFlyers({ flyers, onLoad, onDelete }) {
 }
 
 function AppContent() {
-  const { user, loading: authLoading, signOut, getToken } = useAuth()
+  const { user, loading: authLoading, getToken } = useAuth()
   const [flyer, setFlyer] = useState(null)
   const [inputs, setInputs] = useState(null)
   const [loading, setLoading] = useState(false)
@@ -423,7 +410,6 @@ function AppContent() {
   const [saving, setSaving] = useState(false)
   const [savedFlyers, setSavedFlyers] = useState([])
   const [showSaved, setShowSaved] = useState(false)
-  const [credits, setCredits] = useState(null)
   const [savedFlyerId, setSavedFlyerId] = useState(null)
 
   useEffect(() => {
@@ -431,10 +417,6 @@ function AppContent() {
     apiCall('/flyers', {}, getToken)
       .then(r => r.json())
       .then(data => setSavedFlyers(data.flyers || []))
-      .catch(() => {})
-    apiCall('/credits/balance', {}, getToken)
-      .then(r => r.json())
-      .then(data => setCredits(data))
       .catch(() => {})
   }, [user])
 
@@ -451,11 +433,6 @@ function AppContent() {
       }, getToken)
       const data = await res.json()
       setFlyer(data)
-      // Refresh credits
-      apiCall('/credits/balance', {}, getToken)
-        .then(r => r.json())
-        .then(setCredits)
-        .catch(() => {})
       window.scrollTo({ top: 0, behavior: 'smooth' })
     } catch (e) {
       if (e.message?.includes('402') || e.message?.includes('Insufficient credits')) {
@@ -562,34 +539,12 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-page">
-      <ThemeToggle />
-
-      {/* Header */}
-      <header className="border-b border-default bg-card/80 backdrop-blur-sm sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 md:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg tint-indigo flex items-center justify-center">
-              <Sparkles className="w-4 h-4" />
-            </div>
-            <span className="font-semibold text-primary">Event Flyer Studio</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <button onClick={() => setShowSaved(!showSaved)} className="btn-outline text-sm py-2">
-              <FolderOpen className="w-4 h-4" />
-              Saved
-            </button>
-            {credits && (
-              <div className="px-3 py-1.5 rounded-lg bg-page border border-default text-sm">
-                <span className="text-secondary">Credits:</span>{' '}
-                <span className="font-semibold text-primary">{credits.total_available}</span>
-              </div>
-            )}
-            <button onClick={signOut} className="btn-outline text-sm py-2">
-              <LogOut className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      </header>
+      <Header actions={
+        <button onClick={() => setShowSaved(!showSaved)} className="btn-outline text-sm py-2 px-3">
+          <FolderOpen className="w-4 h-4" />
+          Saved
+        </button>
+      } />
 
       <main className="max-w-7xl mx-auto px-4 md:px-8 py-8">
         {showSaved ? (
@@ -653,8 +608,8 @@ function AppContent() {
       <footer className="mt-16 pb-8">
         <div className="max-w-7xl mx-auto px-4 md:px-8">
           <div className="border-t border-default pt-6 flex items-center justify-center gap-2">
-            <Home className="w-4 h-4 text-secondary" />
-            <span className="text-sm text-secondary">Powered by <a href="https://paperlab.xyz" className="text-primary font-medium hover:underline">PaperLab</a></span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+            <span className="text-sm text-secondary">Powered by <span className="text-primary font-medium">PaperLab</span></span>
           </div>
         </div>
       </footer>

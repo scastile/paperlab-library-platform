@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Loader2, Wand2, Printer, Clock, Puzzle, Box, BookOpen, ListChecks, Map, Sparkles, ChevronDown, ChevronUp, Home, LogOut, Save, Trash2, FolderOpen, User } from 'lucide-react'
 import { useAuth, AuthProvider } from './context/AuthContext'
+import Header from './components/Header'
 
 const API_BASE = '/api'
 
@@ -25,20 +26,6 @@ async function apiCall(path, options = {}, getToken) {
     throw new Error(err.detail || `Request failed (${res.status})`)
   }
   return res
-}
-
-function ThemeToggle() {
-  const [theme, setTheme] = useState(() => localStorage.getItem('erd-theme') || 'light')
-  useEffect(() => {
-    if (theme === 'dark') document.documentElement.setAttribute('data-theme', 'dark')
-    else document.documentElement.removeAttribute('data-theme')
-    localStorage.setItem('erd-theme', theme)
-  }, [theme])
-  return (
-    <button className="theme-toggle" onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')} aria-label="Toggle theme">
-      {theme === 'dark' ? '☀️' : '🌙'}
-    </button>
-  )
 }
 
 function Login() {
@@ -396,8 +383,8 @@ function PlanDisplay({ plan, inputs, onSave, saving, onDelete, isSavedView }) {
 
       <footer className="mt-12 pb-8 no-print">
         <div className="border-t border-default pt-6 flex items-center justify-center gap-2">
-          <Home className="w-4 h-4 text-secondary" />
-          <span className="text-sm text-secondary">Powered by <a href="https://paperlab.xyz" className="text-primary font-medium hover:underline">PaperLab</a></span>
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+          <span className="text-sm text-secondary">Powered by <span className="text-primary font-medium">PaperLab</span></span>
         </div>
       </footer>
     </div>
@@ -405,7 +392,7 @@ function PlanDisplay({ plan, inputs, onSave, saving, onDelete, isSavedView }) {
 }
 
 function AppContent() {
-  const { user, loading: authLoading, signOut, getToken } = useAuth()
+  const { user, loading: authLoading, getToken } = useAuth()
   const [plan, setPlan] = useState(null)
   const [inputs, setInputs] = useState(null)
   const [loading, setLoading] = useState(false)
@@ -413,17 +400,12 @@ function AppContent() {
   const [saving, setSaving] = useState(false)
   const [savedPlans, setSavedPlans] = useState([])
   const [showSaved, setShowSaved] = useState(false)
-  const [credits, setCredits] = useState(null)
 
   useEffect(() => {
     if (!user) return
     apiCall('/plans', {}, getToken)
       .then(r => r.json())
       .then(data => setSavedPlans(data.plans || []))
-      .catch(() => {})
-    apiCall('/credits/balance', {}, getToken)
-      .then(r => r.json())
-      .then(data => setCredits(data))
       .catch(() => {})
   }, [user])
 
@@ -439,11 +421,6 @@ function AppContent() {
       }, getToken)
       const data = await res.json()
       setPlan(data.plan)
-      // Refresh credit balance after deduction
-      apiCall('/credits/balance', {}, getToken)
-        .then(r => r.json())
-        .then(data => setCredits(data))
-        .catch(() => {})
       window.scrollTo({ top: 0, behavior: 'smooth' })
     } catch (e) {
       if (e.message?.includes('402') || e.message?.includes('Insufficient credits')) {
@@ -517,37 +494,13 @@ function AppContent() {
   }
 
   return (
-    <div className="min-h-screen bg-page pt-6">
-      <ThemeToggle />
-
-      {/* Header */}
-      <header className="border-b border-default no-print">
-        <div className="container py-6 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-11 h-11 rounded-xl tint-violet flex items-center justify-center">
-              <Puzzle className="w-5 h-5" />
-            </div>
-            <div>
-              <h1 className="text-lg font-bold text-primary leading-tight">Escape Room Designer</h1>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            {credits !== null && (
-              <span className="text-sm font-medium text-primary px-3 py-1.5 rounded-lg bg-page border border-default">
-                {credits.total_available} credits
-              </span>
-            )}
-            <button onClick={() => setShowSaved(!showSaved)} className="btn-outline py-2 px-3 text-sm">
-              <FolderOpen className="w-4 h-4" />
-              My Rooms
-            </button>
-            <button onClick={signOut} className="btn-outline py-2 px-3 text-sm">
-              <LogOut className="w-4 h-4" />
-              Sign Out
-            </button>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-page">
+      <Header actions={
+        <button onClick={() => setShowSaved(!showSaved)} className="btn-outline py-2 px-3 text-sm">
+          <FolderOpen className="w-4 h-4" />
+          My Rooms
+        </button>
+      } />
 
       {/* Saved Plans Panel */}
       {showSaved && (

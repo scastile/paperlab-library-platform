@@ -11,7 +11,11 @@ services:
     restart: unless-stopped
 
   launchpad-frontend:
-    build: ./apps/library-launchpad/frontend
+    build:
+      context: ./apps/library-launchpad/frontend
+      args:
+        VITE_SUPABASE_URL: http://10.0.0.179:8001
+        VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjowLCJleHAiOjk5OTk5OTk5OTl9.o4txs_Q5kj86L9JFbZS9uULFTMh5Zjw6FLKGhNM-xCc
     ports:
       - "8200:80"
     extra_hosts:
@@ -34,7 +38,11 @@ services:
     restart: unless-stopped
 
   escape-frontend:
-    build: ./apps/escape-room-designer/frontend
+    build:
+      context: ./apps/escape-room-designer/frontend
+      args:
+        VITE_SUPABASE_URL: http://10.0.0.179:8001
+        VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjowLCJleHAiOjk5OTk5OTk5OTl9.o4txs_Q5kj86L9JFbZS9uULFTMh5Zjw6FLKGhNM-xCc
     ports:
       - "8203:80"
     networks:
@@ -60,7 +68,11 @@ services:
     restart: unless-stopped
 
   flyer-frontend:
-    build: ./apps/event-flyer-studio/frontend
+    build:
+      context: ./apps/event-flyer-studio/frontend
+      args:
+        VITE_SUPABASE_URL: http://10.0.0.179:8001
+        VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjowLCJleHAiOjk5OTk5OTk5OTl9.o4txs_Q5kj86L9JFbZS9uULFTMh5Zjw6FLKGhNM-xCc
     ports:
       - "8204:80"
     networks:
@@ -71,7 +83,11 @@ services:
 
   # --- LibPaper Landing Page ---
   landing:
-    build: ./apps/libpaper-landing
+    build:
+      context: ./apps/libpaper-landing
+      args:
+        VITE_SUPABASE_URL: http://10.0.0.179:8001
+        VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjowLCJleHAiOjk5OTk5OTk5OTl9.o4txs_Q5kj86L9JFbZS9uULFTMh5Zjw6FLKGhNM-xCc
     ports:
       - "8202:80"
     networks:

@@ -9,17 +9,56 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session)
-      setUser(session?.user ?? null)
-      setLoading(false)
-    })
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session)
-      setUser(session?.user ?? null)
-      setLoading(false)
-    })
-    return () => subscription.unsubscribe()
+    let mounted = true
+    const subscriptionRef = { current: null }
+
+    const init = async () => {
+      // 1. Try hash hydration first (from auth bridge)
+      const hash = window.location.hash.substring(1)
+      const params = new URLSearchParams(hash)
+      const accessToken = params.get('access_token')
+      const refreshToken = params.get('refresh_token')
+
+      if (accessToken && refreshToken) {
+        const { data, error } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken
+        })
+        if (!error && mounted) {
+          setSession(data.session)
+          setUser(data.session?.user ?? null)
+          setLoading(false)
+        }
+        history.replaceState(null, '', window.location.pathname + window.location.search)
+      } else {
+        // 2. Otherwise check existing session
+        const { data: { session } } = await supabase.auth.getSession()
+        if (mounted) {
+          setSession(session)
+          setUser(session?.user ?? null)
+          setLoading(false)
+        }
+      }
+
+      // 3. Subscribe to auth state changes
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        if (mounted) {
+          setSession(session)
+          setUser(session?.user ?? null)
+          setLoading(false)
+        }
+      })
+      subscriptionRef.current = subscription
+    }
+
+    init()
+
+    return () => {
+      mounted = false
+      if (subscriptionRef.current) {
+        subscriptionRef.current.unsubscribe()
+      }
+    }
   }, [])
 
   const signIn = async (email, password) => {
