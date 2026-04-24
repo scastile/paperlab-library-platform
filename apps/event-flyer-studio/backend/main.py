@@ -54,8 +54,8 @@ VIBE_OVERRIDES = {
         "soft natural light, pastel tones, tranquil composition."
     ),
     "Festive": (
-        "Rich celebratory photography, warm ambient lighting, "
-        "bokeh lights, deep jewel tones, joyful composition."
+        "Bright cheerful photography, warm ambient lighting, "
+        "colorful decorations, inviting atmosphere, joyful energy."
     ),
 }
 
@@ -105,17 +105,16 @@ async def deduct_credits_via_launchpad(token: str, action: str, app_name: str = 
     
     return resp.json()
 
-async def generate_background_image(prompt: str, vibe: str = "Modern & Sleek") -> bytes:
-    """Generate an image using OpenRouter Gemini 3.1 Flash Image. Returns PNG bytes."""
+async def generate_background_image(prompt: str, vibe: str = "Modern & Sleek", layout: str = "poster") -> bytes:
+    """Generate an image using OpenRouter Gemini 2.5 Flash Image. Returns PNG bytes."""
     api_key = os.getenv("OPENROUTER_API_KEY", "")
     if not api_key:
         raise RuntimeError("OPENROUTER_API_KEY not configured")
 
-    # Build the "Prompt Sandwich" — Nano Banana weighs opening phrases heaviest.
     vibe_prefix = VIBE_OVERRIDES.get(vibe, "")
     wrapper = (
-        f"{vibe_prefix} "
-        f"A high-quality professional photograph or illustration for a background: {prompt}. "
+        f"A high-quality professional background photograph: {prompt}. "
+        f"Style direction: {vibe_prefix}. "
         f"Minimalist, clean composition. {NEGATIVE_SUFFIX}"
     )
 
@@ -129,7 +128,7 @@ async def generate_background_image(prompt: str, vibe: str = "Modern & Sleek") -
                 "X-Title": "Event Flyer Studio",
             },
             json={
-                "model": "google/gemini-3.1-flash-image-preview",
+                "model": "google/gemini-2.5-flash-image",
                 "messages": [{"role": "user", "content": wrapper}],
                 "modalities": ["image", "text"],
                 "max_tokens": 4096,
@@ -148,11 +147,9 @@ async def generate_background_image(prompt: str, vibe: str = "Modern & Sleek") -
 
     image_url = images[0].get("image_url", {}).get("url", "")
     if image_url.startswith("data:image"):
-        # Base64 encoded
         b64_data = image_url.split(",", 1)[1]
         return base64.b64decode(b64_data)
     elif image_url.startswith("http"):
-        # Download from URL
         async with httpx.AsyncClient() as client:
             img_resp = await client.get(image_url, timeout=30.0)
         if img_resp.status_code != 200:
@@ -183,17 +180,32 @@ async def generate(req: GenerateRequest, auth: tuple = Depends(get_current_user_
         req.location,
         req.layout,
     )
+
+    # If user provided a custom background description, use it instead of the AI-generated one
+    image_prompt = req.background_description.strip() if req.background_description.strip() else content["image_prompt"]
+
+    # Save logo to temp file if provided
+    logo_path = None
+    if req.logo_base64:
+        try:
+            logo_bytes = base64.b64decode(req.logo_base64)
+            with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as f:
+                f.write(logo_bytes)
+                logo_path = f.name
+        except Exception:
+            logo_path = None
     
     # Generate background image if requested
     image_path = None
     if req.include_image:
         try:
-            img_bytes = await generate_background_image(content["image_prompt"], vibe=req.vibe)
+            img_bytes = await generate_background_image(image_prompt, vibe=req.vibe, layout=req.layout)
             with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as f:
                 f.write(img_bytes)
                 image_path = f.name
+            print(f"[DEBUG] Image generated successfully: {image_path} ({len(img_bytes)} bytes)")
         except Exception as e:
-            # Fallback: no background image, use solid color
+            print(f"[ERROR] Image generation failed: {e}")
             image_path = None
     
     # Render flyer
@@ -207,6 +219,7 @@ async def generate(req: GenerateRequest, auth: tuple = Depends(get_current_user_
         "location": req.location,
         "website": req.website,
         "image_path": image_path,
+        "logo_path": logo_path,
         "accent_color": content.get("color_suggestion", "#6366f1"),
         "vibe": req.vibe,
     }
@@ -214,10 +227,15 @@ async def generate(req: GenerateRequest, auth: tuple = Depends(get_current_user_
     png_bytes = render_flyer(render_fields, layout=req.layout)
     png_b64 = base64.b64encode(png_bytes).decode("utf-8")
     
-    # Cleanup temp image
+    # Cleanup temp files
     if image_path:
         try:
             os.unlink(image_path)
+        except Exception:
+            pass
+    if logo_path:
+        try:
+            os.unlink(logo_path)
         except Exception:
             pass
     
@@ -229,6 +247,8 @@ async def generate(req: GenerateRequest, auth: tuple = Depends(get_current_user_
         "accent_color": content.get("color_suggestion", "#6366f1"),
         "png_base64": png_b64,
         "layout": req.layout,
+        "background_description": req.background_description,
+        "logo_base64": req.logo_base64,
     }
 
 @app.post("/api/regenerate")

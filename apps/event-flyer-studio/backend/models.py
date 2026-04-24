@@ -12,8 +12,10 @@ class GenerateRequest(BaseModel):
     timezone: str = ""
     location: str = ""
     website: str = ""
-    layout: str = "poster"  # poster | modern | social
+    layout: str = "poster"  # poster | modern | social | split | classic | minimal
     include_image: bool = True
+    background_description: str = ""
+    logo_base64: str = ""
 
 class SaveRequest(BaseModel):
     event_name: str
@@ -28,6 +30,8 @@ class SaveRequest(BaseModel):
     website: str = ""
     layout: str = "poster"
     include_image: bool = True
+    background_description: str = ""
+    logo_base64: str = ""
     headline: str = ""
     body_text: str = ""
     cta_text: str = ""

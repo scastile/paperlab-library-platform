@@ -92,10 +92,10 @@ VIBE_DESCRIPTORS = {
         "detail": "gentle bokeh circles, soft natural light through windows, or tranquil water reflections",
     },
     "Festive": {
-        "style": "rich celebratory photography with warm ambient lighting and decorative accents",
-        "colors": "deep gold, ruby red, emerald, and champagne",
+        "style": "bright cheerful photography with colorful decorative accents",
+        "colors": "warm gold, coral, teal, and sunshine yellow",
         "mood": "joyful, welcoming, and celebratory",
-        "detail": "bokeh lights, confetti at the edges, ribbons, or seasonal decorations framing the scene without entering the text zone",
+        "detail": "balloons, streamers, or colorful banners at the edges framing the scene without entering the text zone",
     },
 }
 
@@ -134,11 +134,15 @@ def _build_image_prompt(vibe: str, layout: str, event_name: str, theme: str) -> 
     comp = LAYOUT_COMPOSITION.get(layout, LAYOUT_COMPOSITION["poster"])
     desc = VIBE_DESCRIPTORS.get(vibe, VIBE_DESCRIPTORS["Modern & Sleek"])
 
-    # Narrative paragraph approach (per Google Gemini best practices)
+    subject = theme or event_name or "community event"
+
+    # Narrative paragraph — put the SUBJECT first, style second.
+    # The image model weighs opening phrases heaviest.
     prompt = (
-        f"A {desc['style']} depicting a {theme or 'community event'} scene. "
-        f"The mood is {desc['mood']}, rendered in {desc['colors']}. "
-        f"{desc['detail']}. "
+        f"A professional background photograph depicting {subject}. "
+        f"The scene captures the energy and subject matter of {subject}, "
+        f"rendered in a {desc['style']} style with {desc['colors']} tones. "
+        f"The mood is {desc['mood']}. {desc['detail']}. "
         f"{comp['geometric_rule']} "
         f"Lighting should be {comp['lighting_note']}. "
         f"No text, no letters, no words, no watermarks in the image."

@@ -17,6 +17,7 @@ CREDIT_COSTS = {
     # Flyer Studio
     "flyer_generate": 6,
     "flyer_generate_with_image": 10,
+    "flyer_regenerate": 2,
     # LibPDF
     "pdf_standard": 1,
     "pdf_ocr": 2,

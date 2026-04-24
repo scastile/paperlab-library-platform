@@ -30,8 +30,11 @@ const AUDIENCES = [
 
 const LAYOUTS = [
   { id: "poster", label: "Poster (8.5×11)", icon: LayoutTemplate },
-  { id: "modern", label: "Modern Portrait", icon: Type },
+  { id: "modern", label: "Modern", icon: Type },
   { id: "social", label: "Social Square", icon: ImageIcon },
+  { id: "split", label: "Split", icon: AlignLeft },
+  { id: "classic", label: "Classic", icon: Printer },
+  { id: "minimal", label: "Minimal", icon: FileImage },
 ]
 
 async function apiCall(path, options = {}, getToken) {
@@ -119,6 +122,20 @@ function SmartCanvasForm({ onGenerate, loading }) {
   const [website, setWebsite] = useState("")
   const [layout, setLayout] = useState("poster")
   const [includeImage, setIncludeImage] = useState(true)
+  const [backgroundDescription, setBackgroundDescription] = useState("")
+  const [logoBase64, setLogoBase64] = useState("")
+
+  const handleLogoChange = (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      // Strip the data:image/png;base64, prefix
+      const base64 = reader.result.split(',')[1]
+      setLogoBase64(base64)
+    }
+    reader.readAsDataURL(file)
+  }
 
   const handleSubmit = (e) => {
     e.preventDefault()
@@ -136,6 +153,8 @@ function SmartCanvasForm({ onGenerate, loading }) {
       website: website.trim(),
       layout,
       include_image: includeImage,
+      background_description: backgroundDescription.trim(),
+      logo_base64: logoBase64,
     })
   }
 
@@ -255,6 +274,24 @@ function SmartCanvasForm({ onGenerate, loading }) {
               )
             })}
           </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-primary mb-1.5">Background Description</label>
+          <textarea value={backgroundDescription} onChange={e => setBackgroundDescription(e.target.value)}
+            placeholder="Describe what you want in the background image (e.g., 'a sunny park with children playing')"
+            rows={2}
+            className="w-full px-4 py-2.5 rounded-lg bg-page border border-default text-primary placeholder:text-tertiary focus:outline-none focus:ring-2 focus:ring-accent-solid/30 resize-none" />
+          <p className="text-xs text-tertiary mt-1">Leave blank to let AI decide based on your event.</p>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-primary mb-1.5">Library Logo</label>
+          <input type="file" accept="image/png,image/jpeg,image/svg+xml" onChange={handleLogoChange}
+            className="w-full px-3 py-2.5 rounded-lg bg-page border border-default text-primary text-sm file:mr-3 file:py-1 file:px-3 file:rounded-md file:border-0 file:bg-accent-solid file:text-white" />
+          {logoBase64 && (
+            <p className="text-xs text-green-600 mt-1">Logo uploaded</p>
+          )}
         </div>
 
         <label className="flex items-center gap-3 p-3 rounded-lg bg-page border border-default cursor-pointer">
