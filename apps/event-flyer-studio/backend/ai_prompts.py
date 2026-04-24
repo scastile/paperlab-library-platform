@@ -3,7 +3,7 @@ import json
 import httpx
 
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
-AI_MODEL = os.getenv("AI_MODEL", "google/gemini-2.5-flash")
+AI_MODEL = os.getenv("AI_MODEL", "google/gemini-3.1-flash-image-preview")
 
 # Layout-aware composition instructions for the image generator.
 # Each layout places text in a different zone, so the background MUST
