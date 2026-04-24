@@ -114,6 +114,7 @@ function SmartCanvasForm({ onGenerate, loading }) {
   const [vibe, setVibe] = useState("Modern & Sleek")
   const [date, setDate] = useState("")
   const [time, setTime] = useState("")
+  const [timezone, setTimezone] = useState("")
   const [location, setLocation] = useState("")
   const [website, setWebsite] = useState("")
   const [layout, setLayout] = useState("poster")
@@ -130,6 +131,7 @@ function SmartCanvasForm({ onGenerate, loading }) {
       vibe,
       date,
       time,
+      timezone,
       location: location.trim(),
       website: website.trim(),
       layout,
@@ -206,18 +208,33 @@ function SmartCanvasForm({ onGenerate, loading }) {
               className="w-full px-3 py-2.5 rounded-lg bg-page border border-default text-primary focus:outline-none focus:ring-2 focus:ring-accent-solid/30" />
           </div>
           <div>
+            <label className="block text-sm font-medium text-primary mb-1.5">Timezone</label>
+            <select value={timezone} onChange={e => setTimezone(e.target.value)}
+              className="w-full px-3 py-2.5 rounded-lg bg-page border border-default text-primary focus:outline-none focus:ring-2 focus:ring-accent-solid/30">
+              <option value="">None</option>
+              <option value="ET">Eastern (ET)</option>
+              <option value="CT">Central (CT)</option>
+              <option value="MT">Mountain (MT)</option>
+              <option value="PT">Pacific (PT)</option>
+              <option value="AKT">Alaska (AKT)</option>
+              <option value="HT">Hawaii (HT)</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
             <label className="block text-sm font-medium text-primary mb-1.5">Location</label>
             <input type="text" value={location} onChange={e => setLocation(e.target.value)}
               placeholder="Main Branch Community Room"
               className="w-full px-3 py-2.5 rounded-lg bg-page border border-default text-primary placeholder:text-tertiary focus:outline-none focus:ring-2 focus:ring-accent-solid/30" />
           </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-primary mb-1.5">Website / Registration Link</label>
-          <input type="url" value={website} onChange={e => setWebsite(e.target.value)}
-            placeholder="https://..."
-            className="w-full px-4 py-2.5 rounded-lg bg-page border border-default text-primary placeholder:text-tertiary focus:outline-none focus:ring-2 focus:ring-accent-solid/30" />
+          <div>
+            <label className="block text-sm font-medium text-primary mb-1.5">Website / Registration Link</label>
+            <input type="url" value={website} onChange={e => setWebsite(e.target.value)}
+              placeholder="https://..."
+              className="w-full px-4 py-2.5 rounded-lg bg-page border border-default text-primary placeholder:text-tertiary focus:outline-none focus:ring-2 focus:ring-accent-solid/30" />
+          </div>
         </div>
 
         <div>
@@ -257,27 +274,34 @@ function SmartCanvasForm({ onGenerate, loading }) {
   )
 }
 
-function FlyerEditor({ flyer, onUpdate, onSave, saving, onDownloadPng, onDownloadPdf }) {
+function FlyerEditor({ flyer, onUpdate, onSave, saving, onDownloadPng, onDownloadPdf, getToken }) {
   const [headline, setHeadline] = useState(flyer.headline || "")
   const [bodyText, setBodyText] = useState(flyer.body_text || "")
   const [ctaText, setCtaText] = useState(flyer.cta_text || "")
   const [date, setDate] = useState(flyer.date || "")
   const [time, setTime] = useState(flyer.time || "")
+  const [timezone, setTimezone] = useState(flyer.timezone || "")
   const [location, setLocation] = useState(flyer.location || "")
   const [website, setWebsite] = useState(flyer.website || "")
   const [preview, setPreview] = useState(flyer.png_base64 || "")
   const [regenerating, setRegenerating] = useState(false)
+  const [regenError, setRegenError] = useState('')
 
   const handleRegenerate = async () => {
     setRegenerating(true)
+    setRegenError('')
     try {
       const res = await apiCall('/regenerate', {
         method: 'POST',
-        body: JSON.stringify({ headline, body_text: bodyText, cta_text: ctaText, date, time, location, website })
-      }, () => null) // no auth needed for regenerate
+        body: JSON.stringify({
+          headline, body_text: bodyText, cta_text: ctaText, date, time, timezone, location, website,
+          layout: flyer.layout, vibe: flyer.vibe, accent_color: flyer.accent_color
+        })
+      }, getToken)
       const data = await res.json()
       setPreview(data.png_base64)
     } catch (e) {
+      setRegenError(e.message || 'Failed to regenerate')
       console.error(e)
     } finally {
       setRegenerating(false)
@@ -285,7 +309,7 @@ function FlyerEditor({ flyer, onUpdate, onSave, saving, onDownloadPng, onDownloa
   }
 
   const handleSave = () => {
-    onSave({ ...flyer, headline, body_text: bodyText, cta_text: ctaText, date, time, location, website, png_base64: preview })
+    onSave({ ...flyer, headline, body_text: bodyText, cta_text: ctaText, date, time, timezone, location, website, png_base64: preview })
   }
 
   return (
@@ -336,7 +360,7 @@ function FlyerEditor({ flyer, onUpdate, onSave, saving, onDownloadPng, onDownloa
           <input type="text" value={ctaText} onChange={e => setCtaText(e.target.value)}
             className="w-full px-4 py-2.5 rounded-lg bg-page border border-default text-primary focus:outline-none focus:ring-2 focus:ring-accent-solid/30" />
         </div>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-medium text-primary mb-1">Date</label>
             <input type="date" value={date} onChange={e => setDate(e.target.value)}
@@ -347,21 +371,39 @@ function FlyerEditor({ flyer, onUpdate, onSave, saving, onDownloadPng, onDownloa
             <input type="time" value={time} onChange={e => setTime(e.target.value)}
               className="w-full px-3 py-2.5 rounded-lg bg-page border border-default text-primary focus:outline-none focus:ring-2 focus:ring-accent-solid/30" />
           </div>
+          <div>
+            <label className="block text-sm font-medium text-primary mb-1">Timezone</label>
+            <select value={timezone} onChange={e => setTimezone(e.target.value)}
+              className="w-full px-3 py-2.5 rounded-lg bg-page border border-default text-primary focus:outline-none focus:ring-2 focus:ring-accent-solid/30">
+              <option value="">None</option>
+              <option value="ET">Eastern (ET)</option>
+              <option value="CT">Central (CT)</option>
+              <option value="MT">Mountain (MT)</option>
+              <option value="PT">Pacific (PT)</option>
+              <option value="AKT">Alaska (AKT)</option>
+              <option value="HT">Hawaii (HT)</option>
+            </select>
+          </div>
         </div>
-        <div>
-          <label className="block text-sm font-medium text-primary mb-1">Location</label>
-          <input type="text" value={location} onChange={e => setLocation(e.target.value)}
-            className="w-full px-4 py-2.5 rounded-lg bg-page border border-default text-primary focus:outline-none focus:ring-2 focus:ring-accent-solid/30" />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-primary mb-1">Website</label>
-          <input type="url" value={website} onChange={e => setWebsite(e.target.value)}
-            className="w-full px-4 py-2.5 rounded-lg bg-page border border-default text-primary focus:outline-none focus:ring-2 focus:ring-accent-solid/30" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-primary mb-1">Location</label>
+            <input type="text" value={location} onChange={e => setLocation(e.target.value)}
+              className="w-full px-4 py-2.5 rounded-lg bg-page border border-default text-primary focus:outline-none focus:ring-2 focus:ring-accent-solid/30" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-primary mb-1">Website</label>
+            <input type="url" value={website} onChange={e => setWebsite(e.target.value)}
+              className="w-full px-4 py-2.5 rounded-lg bg-page border border-default text-primary focus:outline-none focus:ring-2 focus:ring-accent-solid/30" />
+          </div>
         </div>
         <button onClick={handleRegenerate} disabled={regenerating} className="btn-outline w-full justify-center disabled:opacity-60">
           {regenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-          {regenerating ? 'Updating preview...' : 'Update Preview'}
+          {regenerating ? 'Updating preview...' : 'Update Preview (2 credits)'}
         </button>
+        {regenError && (
+          <p className="text-red-500 text-sm text-center">{regenError}</p>
+        )}
       </div>
     </div>
   )
@@ -478,6 +520,7 @@ function AppContent() {
         vibe: f.vibe || 'Modern & Sleek',
         date: f.date || '',
         time: f.time || '',
+        timezone: f.timezone || '',
         location: f.location || '',
         website: f.website || '',
         layout: f.layout || 'poster',
@@ -491,6 +534,8 @@ function AppContent() {
         image_prompt: '',
         accent_color: '#6366f1',
         layout: f.layout || 'poster',
+        vibe: f.vibe || 'Modern & Sleek',
+        timezone: f.timezone || '',
       })
       setSavedFlyerId(f.id)
       setShowSaved(false)
@@ -511,20 +556,50 @@ function AppContent() {
     }
   }
 
-  const downloadPng = () => {
+  const downloadPng = async () => {
     if (!savedFlyerId) {
       setError('Save the flyer first to download')
       return
     }
-    window.open(`${API_BASE}/flyers/${savedFlyerId}/download/png`, '_blank')
+    try {
+      const token = getToken?.()
+      const res = await fetch(`${API_BASE}/flyers/${savedFlyerId}/download/png`, {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      })
+      if (!res.ok) throw new Error('Download failed')
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'flyer.png'
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch (e) {
+      setError(e.message || 'Failed to download PNG')
+    }
   }
 
-  const downloadPdf = () => {
+  const downloadPdf = async () => {
     if (!savedFlyerId) {
       setError('Save the flyer first to download')
       return
     }
-    window.open(`${API_BASE}/flyers/${savedFlyerId}/download/pdf`, '_blank')
+    try {
+      const token = getToken?.()
+      const res = await fetch(`${API_BASE}/flyers/${savedFlyerId}/download/pdf`, {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      })
+      if (!res.ok) throw new Error('Download failed')
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'flyer.pdf'
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch (e) {
+      setError(e.message || 'Failed to download PDF')
+    }
   }
 
   if (authLoading) {
@@ -597,6 +672,7 @@ function AppContent() {
                   saving={saving}
                   onDownloadPng={downloadPng}
                   onDownloadPdf={downloadPdf}
+                  getToken={getToken}
                 />
               </div>
             )}

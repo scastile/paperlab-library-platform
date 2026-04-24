@@ -9,6 +9,7 @@ class GenerateRequest(BaseModel):
     vibe: str = "Modern & Sleek"
     date: str = ""
     time: str = ""
+    timezone: str = ""
     location: str = ""
     website: str = ""
     layout: str = "poster"  # poster | modern | social
@@ -22,6 +23,7 @@ class SaveRequest(BaseModel):
     vibe: str = "Modern & Sleek"
     date: str = ""
     time: str = ""
+    timezone: str = ""
     location: str = ""
     website: str = ""
     layout: str = "poster"
@@ -38,5 +40,9 @@ class FlyerUpdateRequest(BaseModel):
     cta_text: Optional[str] = None
     date: Optional[str] = None
     time: Optional[str] = None
+    timezone: Optional[str] = None
     location: Optional[str] = None
     website: Optional[str] = None
+    layout: str = "poster"
+    vibe: str = "Modern & Sleek"
+    accent_color: str = "#6366f1"

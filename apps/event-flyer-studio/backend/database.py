@@ -20,6 +20,7 @@ async def init_db():
                 vibe TEXT,
                 date TEXT,
                 time TEXT,
+                timezone TEXT,
                 location TEXT,
                 website TEXT,
                 layout TEXT DEFAULT 'poster',
@@ -33,6 +34,11 @@ async def init_db():
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """)
+        # Graceful migration: add timezone if table exists without it
+        cursor = await db.execute("PRAGMA table_info(flyers)")
+        cols = [row[1] for row in await cursor.fetchall()]
+        if 'timezone' not in cols:
+            await db.execute("ALTER TABLE flyers ADD COLUMN timezone TEXT")
         await db.commit()
 
 async def get_db():

@@ -203,6 +203,7 @@ async def generate(req: GenerateRequest, auth: tuple = Depends(get_current_user_
         "cta_text": content["cta_text"],
         "date": req.date,
         "time": req.time,
+        "timezone": req.timezone,
         "location": req.location,
         "website": req.website,
         "image_path": image_path,
@@ -241,6 +242,7 @@ async def regenerate(req: FlyerUpdateRequest, auth: tuple = Depends(get_current_
         "cta_text": req.cta_text or "",
         "date": req.date or "",
         "time": req.time or "",
+        "timezone": req.timezone or "",
         "location": req.location or "",
         "website": req.website or "",
         "image_path": None,
@@ -258,12 +260,12 @@ async def save(req: SaveRequest, user_id: str = Depends(get_current_user)):
         png_data = base64.b64decode(req.png_base64) if req.png_base64 else None
         cursor = await db.execute(
             """INSERT INTO flyers 
-               (user_id, event_name, event_description, theme, audience, vibe, date, time, location, website,
+               (user_id, event_name, event_description, theme, audience, vibe, date, time, timezone, location, website,
                 layout, include_image, headline, body_text, cta_text, image_url, png_data)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
                 user_id, req.event_name, req.event_description, req.theme, req.audience, req.vibe,
-                req.date, req.time, req.location, req.website, req.layout, 1 if req.include_image else 0,
+                req.date, req.time, req.timezone, req.location, req.website, req.layout, 1 if req.include_image else 0,
                 req.headline, req.body_text, req.cta_text, req.image_url, png_data
             )
         )
