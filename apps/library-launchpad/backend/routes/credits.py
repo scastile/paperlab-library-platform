@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from auth import get_current_user, optional_user
+from rate_limit import rate_limiter
 from services.credits import get_credit_balance, deduct_credits, can_use_action
 from services import stripe as stripe_service
 
@@ -45,6 +46,9 @@ async def deduct(
     user_id: str = Depends(get_current_user)
 ):
     """Deduct credits for an action. Returns updated balance on success, 402 on failure."""
+    ok, msg = await rate_limiter.check(f"user:{user_id}:deduct", max_requests=30, window_seconds=60)
+    if not ok:
+        raise HTTPException(429, msg)
     success, error = await deduct_credits(
         user_id, req.action, req.campaign_id, req.cost_override, req.app, req.product
     )
@@ -75,6 +79,9 @@ async def create_checkout(
     user_id: str = Depends(get_current_user)
 ):
     """Create Stripe Checkout session for credit pack or subscription."""
+    ok, msg = await rate_limiter.check(f"user:{user_id}:checkout", max_requests=5, window_seconds=60)
+    if not ok:
+        raise HTTPException(429, msg)
     if req.type == "subscription":
         checkout_url = await stripe_service.create_subscription_checkout(user_id, req.pack_id, req.return_url)
     else:

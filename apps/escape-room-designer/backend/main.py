@@ -7,12 +7,13 @@ import json
 import os
 import httpx
 
-load_dotenv()
-
 from config import build_cors_origins, require_env
+from rate_limit import RateLimiterMiddleware
 from ai_prompts import generate_escape_room_detailed
 from auth import get_current_user, get_current_user_with_token, optional_user
 from database import init_db, get_db
+
+load_dotenv()
 
 # Fail fast if critical env vars are missing
 require_env(["OPENROUTER_API_KEY", "SUPABASE_JWT_SECRET"])
@@ -33,6 +34,11 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+)
+app.add_middleware(
+    RateLimiterMiddleware,
+    max_requests=120,
+    window_seconds=60,
 )
 
 class GenerateRequest(BaseModel):

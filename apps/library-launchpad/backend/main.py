@@ -8,6 +8,7 @@ import logging
 load_dotenv()
 
 from config import build_cors_origins, require_env
+from rate_limit import RateLimiterMiddleware, rate_limiter
 
 logger = logging.getLogger("launchpad")
 
@@ -41,6 +42,11 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+)
+app.add_middleware(
+    RateLimiterMiddleware,
+    max_requests=120,
+    window_seconds=60,
 )
 
 app.include_router(generate_router, prefix="/api")
