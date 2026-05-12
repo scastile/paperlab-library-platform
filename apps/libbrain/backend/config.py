@@ -3,7 +3,7 @@ import os
 
 PORT = "8205"
 DOMAINS = ["https://libbrain.paperlab.xyz"]
-REQUIRED = ["OPENROUTER_API_KEY", "SUPABASE_JWT_SECRET", "SUPABASE_URL", "STAFF_PASSWORD"]
+REQUIRED = ["STAFF_PASSWORD"]
 
 
 def build_cors_origins() -> list[str]:

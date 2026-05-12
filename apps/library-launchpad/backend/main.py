@@ -8,14 +8,14 @@ import logging
 load_dotenv()
 
 from config import build_cors_origins, require_env
-from rate_limit import RateLimiterMiddleware, rate_limiter
+from rate_limit import RateLimiterMiddleware
+from database import get_pool, close_pool
 
 logger = logging.getLogger("launchpad")
 
 require_env()
 ALLOWED_ORIGINS = build_cors_origins()
 
-from database import init_db
 from routes.generate import router as generate_router
 from routes.campaigns import router as campaigns_router
 from routes.credits import router as credits_router
@@ -25,12 +25,13 @@ from services.stripe import handle_stripe_webhook
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
-    await init_db()
-    logger.info("Database initialized")
+    await get_pool()  # Initialize pool eagerly
+    logger.info("Database pool initialized")
     yield
-    # Shutdown — cleanup temp campaigns (import here to avoid circular)
-    from routes.generate import _temp_campaigns
-    _temp_campaigns.clear()
+    # Shutdown
+    from routes.generate import cleanup_temp_campaigns
+    await cleanup_temp_campaigns()
+    await close_pool()
     logger.info("Shutdown complete")
 
 
