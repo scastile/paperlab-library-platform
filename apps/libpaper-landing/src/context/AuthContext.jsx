@@ -13,6 +13,24 @@ export function AuthProvider({ children }) {
     const subscriptionRef = { current: null }
 
     const init = async () => {
+      // 0. If coming back from signOut, force clean state — don't restore cached session
+      const urlParams = new URLSearchParams(window.location.search)
+      const justSignedOut = urlParams.get('signed_out') === '1'
+      if (justSignedOut) {
+        // Force clear any lingering local session state
+        await supabase.auth.signOut({ scope: 'local' })
+        if (mounted) {
+          setSession(null)
+          setUser(null)
+          setLoading(false)
+        }
+        // Clean up the param so it doesn't stick
+        const cleaner = new URL(window.location.href)
+        cleaner.searchParams.delete('signed_out')
+        history.replaceState({}, '', cleaner.toString())
+        return
+      }
+
       // 1. Try hash hydration first (from auth bridge)
       const hash = window.location.hash.substring(1)
       const params = new URLSearchParams(hash)

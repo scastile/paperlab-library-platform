@@ -1,3 +1,23 @@
+"""Event Flyer Studio — PIL-based PNG/PDF renderer.
+
+Why this still exists:
+  1. /api/generate  — returns `png_base64` for the legacy download-
+     only flow and as a fallback if the HTML client can't render.
+  2. /api/flyers/{id}/download/png  — PNG download endpoint serves
+     the Pillow-rendered image directly from the DB blob.
+  3. /api/flyers/{id}/download/pdf  — PDF endpoint converts the
+     stored PNG via img2pdf.
+
+The live preview in the browser now uses an HTML/CSS renderer
+(FlyerPreview.jsx + html-to-image).  All new edits that affect the
+visual look of a flyer should update BOTH:
+  · backend/flyer_renderer.py  (Pillow — download outputs)
+  · frontend/src/components/FlyerPreview.jsx  (HTML — live preview)
+
+If/when the project drops the Pillow renderer entirely, these three
+endpoints must be rewritten to use headless Chromium (puppeteer or
+playwright) to capture the HTML instead.
+"""
 import io
 import base64
 from datetime import datetime

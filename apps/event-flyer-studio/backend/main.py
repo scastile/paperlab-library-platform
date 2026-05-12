@@ -9,6 +9,7 @@ import io
 import httpx
 import tempfile
 
+from config import build_cors_origins, require_env
 from auth import get_current_user, get_current_user_with_token
 from database import init_db, get_db
 from models import GenerateRequest, SaveRequest, FlyerUpdateRequest
@@ -18,15 +19,12 @@ from flyer_renderer import render_flyer, png_to_pdf
 load_dotenv = __import__("dotenv").load_dotenv
 load_dotenv()
 
-ALLOWED_ORIGINS = [
-    "http://10.0.0.179:8204",
-    "http://localhost:8204",
-    "http://localhost:5175",
-    "https://flyer.paperlab.xyz",
-]
-ALLOWED_ORIGINS = [o for o in ALLOWED_ORIGINS if o]
+# Fail fast if critical env vars are missing
+require_env(["OPENROUTER_API_KEY", "SUPABASE_JWT_SECRET"])
 
-LAUNCHPAD_URL = os.getenv("LAUNCHPAD_URL", "http://library-launchpad-backend-1:8000")
+ALLOWED_ORIGINS = build_cors_origins()
+
+LAUNCHPAD_URL = os.getenv("LAUNCHPAD_URL", "http://launchpad-backend:8000")
 FAL_KEY = os.getenv("FAL_KEY", "")
 
 # Vibe-specific aesthetic anchors — front-loaded because Nano Banana (Gemini)

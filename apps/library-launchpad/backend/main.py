@@ -7,17 +7,12 @@ import logging
 
 load_dotenv()
 
+from config import build_cors_origins, require_env
+
 logger = logging.getLogger("launchpad")
 
-# Allowed origins — tighten CORS to known domains
-ALLOWED_ORIGINS = [
-    "http://10.0.0.179:8200",
-    "http://localhost:8200",
-    "http://localhost:5173",  # Vite dev server
-    os.getenv("BASE_URL", ""),  # From .env
-]
-# Filter out empty strings
-ALLOWED_ORIGINS = [o for o in ALLOWED_ORIGINS if o]
+require_env()
+ALLOWED_ORIGINS = build_cors_origins()
 
 from database import init_db
 from routes.generate import router as generate_router

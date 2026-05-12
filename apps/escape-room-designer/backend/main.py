@@ -9,19 +9,16 @@ import httpx
 
 load_dotenv()
 
+from config import build_cors_origins, require_env
 from ai_prompts import generate_escape_room_detailed
 from auth import get_current_user, get_current_user_with_token, optional_user
 from database import init_db, get_db
 
-ALLOWED_ORIGINS = [
-    "http://10.0.0.179:8203",
-    "http://localhost:8203",
-    "http://localhost:5174",
-    "https://escape.paperlab.xyz",
-]
-ALLOWED_ORIGINS = [o for o in ALLOWED_ORIGINS if o]
+# Fail fast if critical env vars are missing
+require_env(["OPENROUTER_API_KEY", "SUPABASE_JWT_SECRET"])
 
-LAUNCHPAD_URL = os.getenv("LAUNCHPAD_URL", "http://library-launchpad-backend-1:8000")
+LAUNCHPAD_URL = os.getenv("LAUNCHPAD_URL", "http://launchpad-backend:8000")
+ALLOWED_ORIGINS = build_cors_origins()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

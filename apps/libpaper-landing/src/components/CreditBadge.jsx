@@ -36,25 +36,20 @@ export default function CreditBadge() {
       try {
         const url = `${API_BASE}/credits/balance`
         const token = session.access_token
-        console.log('[CreditBadge] Fetching credits from:', url, 'token length:', token?.length)
         const res = await fetch(url, {
           headers: { Authorization: `Bearer ${token}` },
         })
-        console.log('[CreditBadge] Response status:', res.status)
         if (!res.ok) {
           const text = await res.text()
-          console.error('[CreditBadge] Fetch failed:', res.status, text)
           if (!cancelled) setError(`API error ${res.status}: ${text.slice(0, 200)}`)
           return
         }
         const data = await res.json()
-        console.log('[CreditBadge] Credits loaded:', data)
         if (!cancelled) {
           setCredits(data)
           setError(null)
         }
       } catch (e) {
-        console.error('[CreditBadge] Fetch error:', e)
         if (!cancelled) setError(`Network error: ${e.message}`)
       }
     }
