@@ -5,10 +5,10 @@ from pydantic import BaseModel
 from dotenv import load_dotenv
 import json
 import os
-import httpx
 
 from config import build_cors_origins, require_env
 from rate_limit import RateLimiterMiddleware
+from credit_proxy import proxy_request
 from ai_prompts import generate_escape_room_detailed
 from auth import get_current_user, get_current_user_with_token, optional_user
 from database import init_db, get_db
@@ -21,10 +21,23 @@ require_env(["OPENROUTER_API_KEY", "SUPABASE_JWT_SECRET"])
 LAUNCHPAD_URL = os.getenv("LAUNCHPAD_URL", "http://launchpad-backend:8000")
 ALLOWED_ORIGINS = build_cors_origins()
 
+
+async def deduct_credits_via_launchpad(token: str, action: str, app: str = "escape-room", product: str = "escape-room-designer"):
+    """Proxy credit deduction to the Launchpad backend."""
+    return await proxy_request(
+        LAUNCHPAD_URL,
+        path="/api/credits/deduct",
+        token=token,
+        method="POST",
+        data={"action": action, "app": app, "product": product},
+    )
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await init_db()
     yield
+
 
 app = FastAPI(title="Escape Room Designer", version="0.1.0", lifespan=lifespan)
 
@@ -55,32 +68,9 @@ class SaveRequest(BaseModel):
     duration: str = "45 minutes"
     plan_json: dict
 
-async def deduct_credits_via_launchpad(token: str, action: str, app: str = "escape-room", product: str = "escape-room-designer"):
-    """Call Launchpad's credit deduct endpoint. Returns balance dict on success, raises HTTPException on failure."""
-    async with httpx.AsyncClient() as client:
-        try:
-            resp = await client.post(
-                f"{LAUNCHPAD_URL}/api/credits/deduct",
-                headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
-                json={"action": action, "app": app, "product": product},
-                timeout=10.0
-            )
-        except httpx.RequestError as e:
-            raise HTTPException(503, f"Credit service unreachable: {e}")
-    
-    if resp.status_code == 402:
-        detail = resp.json().get("detail", "Insufficient credits")
-        raise HTTPException(402, detail)
-    if resp.status_code == 401:
-        raise HTTPException(401, "Invalid token")
-    if not resp.is_success:
-        raise HTTPException(500, f"Credit service error: {resp.status_code}")
-    
-    return resp.json()
-
 @app.post("/api/generate")
 async def generate(req: GenerateRequest, auth: tuple = Depends(get_current_user_with_token)):
-    user_id, token = auth
+    _, token = auth
     # Deduct credits atomically via Launchpad
     await deduct_credits_via_launchpad(token, "escape_room_generate")
     plan = await generate_escape_room_detailed(
@@ -133,24 +123,12 @@ async def delete_plan(plan_id: int, user_id: str = Depends(get_current_user)):
     await db.close()
     return {"message": "Deleted"}
 
+@app.get("/api/credits/balance")
+async def credits_balance(auth: tuple = Depends(get_current_user_with_token)):
+    """Proxy credit balance to the Launchpad backend."""
+    _, token = auth
+    return await proxy_request(LAUNCHPAD_URL, path="/api/credits/balance", token=token)
+
 @app.get("/api/health")
 async def health():
     return {"ok": True}
-
-@app.get("/api/credits/balance")
-async def credits_balance(auth: tuple = Depends(get_current_user_with_token)):
-    user_id, token = auth
-    async with httpx.AsyncClient() as client:
-        try:
-            resp = await client.get(
-                f"{LAUNCHPAD_URL}/api/credits/balance",
-                headers={"Authorization": f"Bearer {token}"},
-                timeout=10.0
-            )
-        except httpx.RequestError as e:
-            raise HTTPException(503, f"Credit service unreachable: {e}")
-    if resp.status_code == 401:
-        raise HTTPException(401, "Invalid token")
-    if not resp.is_success:
-        raise HTTPException(500, f"Credit service error: {resp.status_code}")
-    return resp.json()

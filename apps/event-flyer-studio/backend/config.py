@@ -1,25 +1,9 @@
-"""Shared config — CORS origins + env validation for Event Flyer Studio."""
-import os
+"""Event Flyer Studio backend config.""""""
+from apps._shared.config import build_cors_origins, require_env
 
-ALLOWED_DOMAINS = ["https://flyer.paperlab.xyz"]
-PORT = "8204"
-
-
-def build_cors_origins() -> list[str]:
-    raw = os.getenv("ALLOWED_ORIGINS", "")
-    if raw:
-        return [o.strip() for o in raw.split(",") if o.strip()]
-    origins = [
-        f"http://10.0.0.179:{PORT}",
-        f"http://localhost:{PORT}",
-    ]
-    origins.extend(ALLOWED_DOMAINS)
-    return [o for o in origins if o]
+ALLOWED_ORIGINS = build_cors_origins("8204", ['https://flyer.paperlab.xyz'])
+REQUIRED = ['OPENROUTER_API_KEY', 'SUPABASE_JWT_SECRET']
 
 
-def require_env(keys: list[str]) -> None:
-    missing = [k for k in keys if not os.getenv(k)]
-    if missing:
-        raise RuntimeError(
-            f"Missing required environment variables: {', '.join(missing)}"
-        )
+def require_all():
+    require_env(REQUIRED)

@@ -10,7 +10,8 @@ import httpx
 import tempfile
 
 from config import build_cors_origins, require_env
-from rate_limit import RateLimiterMiddleware, rate_limiter
+from rate_limit import RateLimiterMiddleware
+from credit_proxy import proxy_request
 from auth import get_current_user, get_current_user_with_token
 from database import init_db, get_db
 from models import GenerateRequest, SaveRequest, FlyerUpdateRequest
@@ -59,7 +60,6 @@ VIBE_OVERRIDES = {
 }
 
 # Mandatory negative constraints appended to every image call.
-# Simulates a negative prompt for models that don't support one natively.
 NEGATIVE_SUFFIX = (
     "The image must be a background only. "
     "Do not include any placeholder text, labels, UI elements, or borders. "
@@ -67,10 +67,25 @@ NEGATIVE_SUFFIX = (
     "Ensure the text-safe zone is clear of complex details."
 )
 
+
+async def deduct_credits_via_launchpad(
+    token: str, action: str, app_name: str = "flyer-studio", product: str = "event-flyer-studio"
+):
+    """Proxy credit deduction to the Launchpad backend."""
+    return await proxy_request(
+        LAUNCHPAD_URL,
+        path="/api/credits/deduct",
+        token=token,
+        method="POST",
+        data={"action": action, "app": app_name, "product": product},
+    )
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await init_db()
     yield
+
 
 app = FastAPI(title="Event Flyer Studio", version="0.1.0", lifespan=lifespan)
 
@@ -87,27 +102,6 @@ app.add_middleware(
     window_seconds=60,
 )
 
-async def deduct_credits_via_launchpad(token: str, action: str, app_name: str = "flyer-studio", product: str = "event-flyer-studio"):
-    async with httpx.AsyncClient() as client:
-        try:
-            resp = await client.post(
-                f"{LAUNCHPAD_URL}/api/credits/deduct",
-                headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
-                json={"action": action, "app": app_name, "product": product},
-                timeout=10.0
-            )
-        except httpx.RequestError as e:
-            raise HTTPException(503, f"Credit service unreachable: {e}")
-    
-    if resp.status_code == 402:
-        detail = resp.json().get("detail", "Insufficient credits")
-        raise HTTPException(402, detail)
-    if resp.status_code == 401:
-        raise HTTPException(401, "Invalid token")
-    if not resp.is_success:
-        raise HTTPException(500, f"Credit service error: {resp.status_code}")
-    
-    return resp.json()
 
 async def generate_background_image(prompt: str, vibe: str = "Modern & Sleek", layout: str = "poster") -> bytes:
     """Generate an image using OpenRouter Gemini 2.5 Flash Image. Returns PNG bytes."""
@@ -162,6 +156,7 @@ async def generate_background_image(prompt: str, vibe: str = "Modern & Sleek", l
     else:
         raise RuntimeError("Invalid image URL format")
 
+
 @app.post("/api/generate")
 async def generate(req: GenerateRequest, auth: tuple = Depends(get_current_user_with_token)):
     user_id, token = auth
@@ -185,10 +180,9 @@ async def generate(req: GenerateRequest, auth: tuple = Depends(get_current_user_
         req.layout,
     )
 
-    # If user provided a custom background description, use it instead of the AI-generated one
+    # If user provided a custom background description, use it
     image_prompt = req.background_description.strip() if req.background_description.strip() else content["image_prompt"]
 
-    # Save logo to temp file if provided
     logo_path = None
     if req.logo_base64:
         try:
@@ -207,7 +201,6 @@ async def generate(req: GenerateRequest, auth: tuple = Depends(get_current_user_
             with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as f:
                 f.write(img_bytes)
                 image_path = f.name
-            print(f"[DEBUG] Image generated successfully: {image_path} ({len(img_bytes)} bytes)")
         except Exception as e:
             print(f"[ERROR] Image generation failed: {e}")
             image_path = None
@@ -228,11 +221,9 @@ async def generate(req: GenerateRequest, auth: tuple = Depends(get_current_user_
         "vibe": req.vibe,
     }
     
-    # Render fallback PNG via PIL (for download endpoint) — client renders HTML live
     png_bytes = render_flyer(render_fields, layout=req.layout)
     png_b64 = base64.b64encode(png_bytes).decode("utf-8")
     
-    # Also return the raw background image as base64 for the HTML renderer
     bg_base64 = None
     if image_path and os.path.exists(image_path):
         try:
@@ -241,7 +232,6 @@ async def generate(req: GenerateRequest, auth: tuple = Depends(get_current_user_
         except Exception:
             pass
     
-    # Cleanup temp files
     if image_path:
         try:
             os.unlink(image_path)
@@ -272,9 +262,10 @@ async def generate(req: GenerateRequest, auth: tuple = Depends(get_current_user_
         "logo_base64": req.logo_base64,
     }
 
+
 @app.post("/api/regenerate")
 async def regenerate(req: FlyerUpdateRequest, auth: tuple = Depends(get_current_user_with_token)):
-    """Re-render a flyer with edited text fields. Deducts 2 credits."""
+    """Re-render a flyer with edited text fields."""
     user_id, token = auth
     await deduct_credits_via_launchpad(token, "flyer_regenerate")
     render_fields = {
@@ -293,6 +284,7 @@ async def regenerate(req: FlyerUpdateRequest, auth: tuple = Depends(get_current_
     png_bytes = render_flyer(render_fields, layout=req.layout or "poster")
     png_b64 = base64.b64encode(png_bytes).decode("utf-8")
     return {"png_base64": png_b64}
+
 
 @app.post("/api/save")
 async def save(req: SaveRequest, user_id: str = Depends(get_current_user)):
@@ -316,6 +308,7 @@ async def save(req: SaveRequest, user_id: str = Depends(get_current_user)):
     finally:
         await db.close()
 
+
 @app.get("/api/flyers")
 async def list_flyers(user_id: str = Depends(get_current_user)):
     db = await get_db()
@@ -329,6 +322,7 @@ async def list_flyers(user_id: str = Depends(get_current_user)):
         return {"flyers": [dict(r) for r in rows]}
     finally:
         await db.close()
+
 
 @app.get("/api/flyers/{flyer_id}")
 async def get_flyer(flyer_id: int, user_id: str = Depends(get_current_user)):
@@ -348,6 +342,7 @@ async def get_flyer(flyer_id: int, user_id: str = Depends(get_current_user)):
     finally:
         await db.close()
 
+
 @app.delete("/api/flyers/{flyer_id}")
 async def delete_flyer(flyer_id: int, user_id: str = Depends(get_current_user)):
     db = await get_db()
@@ -357,6 +352,7 @@ async def delete_flyer(flyer_id: int, user_id: str = Depends(get_current_user)):
         return {"message": "Deleted"}
     finally:
         await db.close()
+
 
 @app.get("/api/flyers/{flyer_id}/download/png")
 async def download_png(flyer_id: int, user_id: str = Depends(get_current_user)):
@@ -375,6 +371,7 @@ async def download_png(flyer_id: int, user_id: str = Depends(get_current_user)):
         )
     finally:
         await db.close()
+
 
 @app.get("/api/flyers/{flyer_id}/download/pdf")
 async def download_pdf(flyer_id: int, user_id: str = Depends(get_current_user)):
@@ -395,23 +392,13 @@ async def download_pdf(flyer_id: int, user_id: str = Depends(get_current_user)):
     finally:
         await db.close()
 
+
 @app.get("/api/credits/balance")
 async def credits_balance(auth: tuple = Depends(get_current_user_with_token)):
-    user_id, token = auth
-    async with httpx.AsyncClient() as client:
-        try:
-            resp = await client.get(
-                f"{LAUNCHPAD_URL}/api/credits/balance",
-                headers={"Authorization": f"Bearer {token}"},
-                timeout=10.0
-            )
-        except httpx.RequestError as e:
-            raise HTTPException(503, f"Credit service unreachable: {e}")
-    if resp.status_code == 401:
-        raise HTTPException(401, "Invalid token")
-    if not resp.is_success:
-        raise HTTPException(500, f"Credit service error: {resp.status_code}")
-    return resp.json()
+    """Proxy credit balance to the Launchpad backend."""
+    _, token = auth
+    return await proxy_request(LAUNCHPAD_URL, path="/api/credits/balance", token=token)
+
 
 @app.get("/api/health")
 async def health():
