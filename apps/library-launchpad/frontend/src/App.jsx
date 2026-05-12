@@ -8,7 +8,7 @@ import WelcomeModal from './components/WelcomeModal'
 import Login from './components/Login'
 import GenerationStatus from './components/GenerationStatus'
 import { useAuth } from './context/AuthContext'
-import { LogOut, Lock, Sparkles, CreditCard, Trash2, Sun, Moon, ChevronDown, ChevronRight, Rocket, Puzzle, Palette, FileText } from 'lucide-react'
+import { LogOut, Lock, Sparkles, CreditCard, Trash2, Sun, Moon, ChevronDown, ChevronRight, Rocket, Puzzle, Palette } from 'lucide-react'
 import { getRandomExample } from './data/exampleCampaigns'
 import { featuredCampaigns } from './data/exampleCampaigns'
 import Footer from './components/Footer'
@@ -339,7 +339,6 @@ export default function App() {
     { icon: Rocket, label: 'Launchpad', href: 'https://launchpad.paperlab.xyz', tint: 'tint-indigo', color: '#6366f1', active: true },
     { icon: Puzzle, label: 'Escape Room', href: 'https://escape.paperlab.xyz', tint: 'tint-violet', color: '#8b5cf6' },
     { icon: Palette, label: 'Flyer Studio', href: 'https://flyer.paperlab.xyz', tint: 'tint-rose', color: '#f43f5e' },
-    { icon: FileText, label: 'LibPDF', href: '#', tint: 'tint-emerald', color: '#10b981', soon: true },
   ]
 
   return (
@@ -347,82 +346,76 @@ export default function App() {
       {/* Header */}
       <header className="border-b border-default bg-card">
         <div className="max-w-7xl mx-auto px-4 md:px-8 h-16 flex items-center justify-between">
+          <a href={productUrl('https://lib.paperlab.xyz')} className="flex items-center gap-2.5 text-primary font-bold text-lg no-underline">
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{color:'var(--accent-solid)'}}><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+            <span>PaperLab</span>
+          </a>
+          <nav className="hidden md:flex items-center gap-1">
+            {SERVICES.map((s) => {
+              const Icon = s.icon
+              return (
+                <a key={s.label} href={s.soon ? undefined : productUrl(s.href)}
+                  onClick={s.soon ? (e) => e.preventDefault() : undefined}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 no-underline ${s.soon ? 'opacity-40 cursor-not-allowed text-secondary' : s.active ? 'bg-hover text-primary' : 'text-secondary hover:text-primary hover:bg-hover'}`}
+                  title={s.soon ? `${s.label} — Coming Soon` : s.label}>
+                  <span className={`w-7 h-7 rounded-md flex items-center justify-center ${s.tint}`}>
+                    <Icon className="w-4 h-4" style={{ color: s.color }} />
+                  </span>
+                  <span className="hidden lg:inline">{s.label}</span>
+                  {s.soon && <span className="text-[10px] text-tertiary ml-0.5">soon</span>}
+                </a>
+              )
+            })}
+          </nav>
           <div className="flex items-center gap-3">
-            <a href={productUrl('https://lib.paperlab.xyz')} className="flex items-center gap-2.5 text-primary font-bold text-lg no-underline flex-shrink-0">
-              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{color:'var(--accent-solid)'}}><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
-              <span>PaperLab</span>
-            </a>
-            <nav className="hidden md:flex items-center gap-1 ml-2">
-              {SERVICES.map((s) => {
-                const Icon = s.icon
-                return (
-                  <a key={s.label} href={s.soon ? undefined : productUrl(s.href)}
-                    onClick={s.soon ? (e) => e.preventDefault() : undefined}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 no-underline ${s.soon ? 'opacity-40 cursor-not-allowed text-secondary' : s.active ? 'bg-hover text-primary' : 'text-secondary hover:text-primary hover:bg-hover'}`}
-                    title={s.soon ? `${s.label} — Coming Soon` : s.label}>
-                    <span className={`w-7 h-7 rounded-md flex items-center justify-center ${s.tint}`}>
-                      <Icon className="w-4 h-4" style={{ color: s.color }} />
-                    </span>
-                    <span className="hidden lg:inline">{s.label}</span>
-                    {s.soon && <span className="text-[10px] text-tertiary ml-0.5">soon</span>}
-                  </a>
-                )
-              })}
-            </nav>
-          </div>
-          <div className="flex items-center gap-2 flex-shrink-0">
             <button
               onClick={toggleTheme}
               aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-              className="p-2 text-secondary hover:text-primary hover:bg-hover rounded-lg transition-all duration-250 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-solid)]"
+              className="p-2 text-secondary hover:text-primary hover:bg-hover rounded-lg transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-solid)]"
             >
               {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
             </button>
-          {user && (
-            <>
-              {credits && (
-                <button
-                  onClick={() => setShowCreditModal(true)}
-                  className="flex items-center gap-2 px-3 py-1.5 text-sm bg-card border border-default rounded-lg transition-all duration-250 hover:bg-hover"
-                >
-                  <Sparkles className="w-4 h-4 accent-solid" />
-                  <span className="text-primary">{credits.total_available || 0} credits</span>
-                </button>
-              )}
+            {user && credits && (
+              <button
+                onClick={() => setShowCreditModal(true)}
+                className="flex items-center gap-2 px-3 py-1.5 text-sm bg-card border border-default rounded-lg transition-all duration-250 hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-solid)]"
+              >
+                <Sparkles className="w-4 h-4 accent-solid" />
+                <span className="text-primary">{credits.total_available} credits</span>
+              </button>
+            )}
+            {guestMode && (
+              <button
+                onClick={() => setGuestMode(false)}
+                className="btn-gradient flex items-center gap-2 px-4 py-2 text-sm rounded-lg font-medium"
+              >
+                <Lock className="w-4 h-4" />
+                Sign Up
+              </button>
+            )}
+            {user && (
               <button
                 onClick={signOut}
-                className="flex items-center gap-2 px-3 py-1.5 text-sm text-secondary hover:text-primary hover:bg-hover rounded-lg transition-all duration-250"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-secondary hover:text-primary hover:bg-hover transition-all duration-200"
               >
                 <LogOut className="w-4 h-4" />
-                Sign Out
+                <span className="hidden sm:inline">Sign Out</span>
               </button>
-            </>
-          )}
-          {guestMode && (
-            <button
-              onClick={() => setGuestMode(false)}
-              className="btn-gradient flex items-center gap-2 px-4 py-2 text-sm rounded-lg font-medium"
-            >
-              <Lock className="w-4 h-4" />
-              Sign Up for AI Generation
-            </button>
-          )}
+            )}
           </div>
         </div>
       </header>
 
       <div className="max-w-7xl mx-auto px-4 md:px-8 py-8 md:py-12">
-        <div className="mb-10">
-          <p className="text-secondary max-w-2xl">
+        <div className="mb-10 text-center">
+          <p className="text-secondary max-w-2xl mx-auto">
             Transform your library's engagement with AI-powered promotional campaigns.
             Generate innovative cross-promotion ideas for books, movies, games, and events.
           </p>
-          <div className="mt-4 text-sm">
-            <div className="flex gap-6 flex-wrap">
-              <span className="accent-solid font-semibold">25,000+ Ideas Generated</span>
-              <span className="accent-solid font-semibold">450+ Libraries Using</span>
-              <span className="accent-solid font-semibold">98% Satisfaction</span>
-            </div>
+          <div className="mt-4 text-sm flex justify-center gap-6 flex-wrap">
+            <span className="accent-solid font-semibold">25,000+ Ideas Generated</span>
+            <span className="accent-solid font-semibold">450+ Libraries Using</span>
+            <span className="accent-solid font-semibold">98% Satisfaction</span>
           </div>
         </div>
 

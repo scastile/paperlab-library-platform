@@ -25,7 +25,6 @@ export default function CreditBadge() {
 
   useEffect(() => {
     if (!user || !session?.access_token) {
-      setError('Not authenticated')
       return
     }
 
@@ -93,7 +92,7 @@ export default function CreditBadge() {
         onClick={() => setShowModal(true)}
         className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-page border border-default text-sm font-medium text-primary hover:bg-hover transition-all duration-200"
       >
-        <span>{credits?.total_available ?? (error ? '!' : '—')} credits</span>
+        <span>{credits?.total_available ?? '—'} credits</span>
         <span className="flex items-center justify-center w-5 h-5 rounded-full bg-[var(--accent-solid)] text-white">
           <Plus className="w-3 h-3" />
         </span>
