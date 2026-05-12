@@ -1,12 +1,11 @@
 import { useAuth } from '../context/AuthContext'
-import { Rocket, Puzzle, Palette, FileText, LogOut } from 'lucide-react'
+import { Rocket, Puzzle, Palette, LogOut } from 'lucide-react';
 import CreditBadge from './CreditBadge'
 
 const SERVICES = [
   { icon: Rocket, label: 'Launchpad', href: 'https://launchpad.paperlab.xyz', tint: 'tint-indigo', color: '#6366f1' },
   { icon: Puzzle, label: 'Escape Room', href: 'https://escape.paperlab.xyz', tint: 'tint-violet', color: '#8b5cf6' },
   { icon: Palette, label: 'Flyer Studio', href: 'https://flyer.paperlab.xyz', tint: 'tint-rose', color: '#f43f5e' },
-  { icon: FileText, label: 'LibPDF', href: '#', tint: 'tint-emerald', color: '#10b981', soon: true },
 ]
 
 export default function Header() {

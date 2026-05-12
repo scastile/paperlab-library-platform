@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import Header from '../components/Header'
 import ServiceCard from '../components/ServiceCard'
-import { Rocket, Puzzle, Palette, FileText } from 'lucide-react'
+import { Rocket, Puzzle, Palette } from 'lucide-react'
 import { buildProductUrl } from '../lib/auth-bridge'
 
 const SERVICES = [
@@ -33,15 +33,6 @@ const SERVICES = [
     tint: 'tint-rose',
     tag: 'Live',
     tagClass: 'bg-emerald-500/10 text-emerald-500',
-  },
-  {
-    icon: FileText,
-    title: 'LibPDF',
-    description: 'Merge, split, convert, OCR, and sign PDFs. A full document toolkit for staff and patrons — no IT setup required.',
-    href: '#',
-    tint: 'tint-emerald',
-    tag: 'Coming Soon',
-    tagClass: 'bg-amber-500/10 text-amber-500',
   },
 ]
 
@@ -78,7 +69,7 @@ export default function Dashboard() {
           <p className="text-secondary mt-1">Choose a product to get started</p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {SERVICES.map((s) => (
             <ServiceCard key={s.title} {...s} onClick={s.tag === 'Live' ? goToProduct(s.href) : undefined} />
           ))}

@@ -97,6 +97,34 @@ services:
       - launchpad-backend
     restart: unless-stopped
 
+  # --- LibBrain ---
+  libbrain-backend:
+    build: ./apps/libbrain/backend
+    env_file: ./apps/libbrain/backend/.env
+    environment:
+      - DB_PATH=/app/data/libbrain.db
+      - SUPABASE_URL=http://host.docker.internal:8001
+    volumes:
+      - ./apps/libbrain/data:/app/data
+    networks:
+      - default
+      - papercore
+    restart: unless-stopped
+
+  libbrain-frontend:
+    build:
+      context: ./apps/libbrain/frontend
+      args:
+        VITE_SUPABASE_URL: http://10.0.0.179:8001
+        VITE_SUPABASE_ANON_KEY: eyJhbG...-xCc
+    ports:
+      - "8205:80"
+    networks:
+      - default
+    depends_on:
+      - libbrain-backend
+    restart: unless-stopped
+
 networks:
   default:
   papercore:

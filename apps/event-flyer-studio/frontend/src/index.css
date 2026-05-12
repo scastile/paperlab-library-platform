@@ -132,3 +132,254 @@ body {
 @media print {
   .no-print { display: none !important; }
 }
+
+/* ---- Flyer HTML Renderer Styles ---- */
+.flyer-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.flyer-root {
+  font-family: 'Inter', 'Playfair Display', system-ui, sans-serif;
+  position: relative;
+  overflow: hidden;
+  border-radius: 0;
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.08);
+}
+
+.flyer-surface {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.flyer-bg-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
+}
+
+.flyer-panel {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 40px 48px;
+  gap: 16px;
+  flex: 1;
+}
+
+.flyer-panel-left {
+  align-items: flex-start;
+  justify-content: center;
+  padding-left: 72px;
+}
+
+.flyer-panel-center {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 32px 40px;
+}
+
+.flyer-panel-cream {
+  background: rgba(255, 252, 245, 0.92);
+  margin: 60px 40px;
+  border-radius: 4px;
+  padding: 40px 36px;
+  align-items: center;
+  text-align: center;
+}
+
+.flyer-panel-nobg {
+  align-items: center;
+  text-align: center;
+  justify-content: center;
+  padding-top: 60px;
+}
+
+.flyer-label {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.flyer-headline {
+  font-size: 36px;
+  font-weight: 700;
+  line-height: 1.15;
+  margin: 0;
+  color: var(--flyer-text, #1d1d1f);
+}
+
+.flyer-headline-lg { font-size: 42px; }
+.flyer-headline-xl { font-size: 48px; }
+.flyer-headline-sm { font-size: 32px; }
+
+.flyer-classic {
+  font-family: 'Playfair Display', 'Inter', serif;
+  font-size: 38px;
+  color: #2a1f14;
+}
+
+.flyer-body {
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--flyer-body, #555);
+  margin: 0;
+}
+
+.flyer-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  font-size: 14px;
+  color: var(--flyer-info, #777);
+  align-items: center;
+  justify-content: center;
+}
+
+.flyer-info-item { white-space: nowrap; }
+
+.flyer-info-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.flyer-info-row {
+  font-size: 14px;
+  color: var(--flyer-info, #666);
+}
+
+.flyer-info-label {
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-right: 6px;
+}
+
+.flyer-cta {
+  display: inline-block;
+  padding: 12px 32px;
+  border-radius: 8px;
+  font-size: 18px;
+  font-weight: 600;
+  color: white;
+  text-align: center;
+}
+
+.flyer-cta-sm {
+  padding: 10px 28px;
+  font-size: 16px;
+  border-radius: 6px;
+}
+
+.flyer-cta-outline {
+  background: transparent !important;
+  border: 2px solid;
+  color: inherit;
+}
+
+.flyer-accent-bar {
+  height: 6px;
+  width: 100%;
+  flex-shrink: 0;
+}
+
+.flyer-accent-bar-thin { height: 4px; }
+
+.flyer-side-bar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 12px;
+  z-index: 2;
+}
+
+.flyer-line {
+  position: absolute;
+  left: 40px;
+  right: 40px;
+  top: 40px;
+  z-index: 2;
+}
+
+.fly-line-bottom {
+  top: auto;
+  bottom: 40px;
+}
+
+.flyer-split { flex-direction: row; }
+
+.flyer-split-image {
+  width: 50%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+.flyer-split-text {
+  width: 50%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 36px 28px;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  text-align: center;
+}
+
+.flyer-split-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.flyer-split-fallback {
+  width: 100%;
+  height: 100%;
+}
+
+.flyer-logo {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  max-width: 100px;
+  max-height: 48px;
+  z-index: 10;
+  object-fit: contain;
+}
+
+.flyer-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.btn-png, .btn-pdf {
+  padding: 6px 16px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid var(--border-default);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.btn-png:hover, .btn-pdf:hover { background: var(--bg-hover); }
+.btn-png:active, .btn-pdf:active { transform: scale(0.97); }

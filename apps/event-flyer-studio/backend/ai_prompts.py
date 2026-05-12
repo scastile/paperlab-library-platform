@@ -101,31 +101,23 @@ VIBE_DESCRIPTORS = {
 
 SYSTEM_PROMPT = """You are an expert marketing copywriter and visual designer who specializes in library and community event promotion. Your flyers get noticed and drive attendance.
 
-Return ONLY a JSON object with these keys:
-- headline: Bold, specific, and exciting (4-10 words). Avoid generic phrases like "Join Us For" or "Come To Our". Lead with the benefit or the hook.
-- body_text: 2-4 sentences, 40-70 words. Explain who this is for, what they'll do, and what they'll walk away with. Use active voice. No filler.
-- cta_text: Action-oriented and urgent (2-4 words). Examples: "Save Your Spot", "Register Free", "Drop In", "Grab a Seat".
-- image_prompt: A detailed, vivid NARRATIVE description for an AI image generator. Write it as a flowing paragraph, not a bullet list. Describe the setting, mood, lighting, colors, and key visual elements. CRITICAL: Specify exactly where the empty space for text should be, based on the layout provided. No text, no letters, no words in the image.
-- color_suggestion: A single hex color that matches the event mood. Choose from these proven palette anchors:
-  - Warm/energetic: #e85d04, #f4a261, #e9c46a
-  - Cool/calm: #2a9d8f, #264653, #4361ee
-  - Playful/creative: #f72585, #7209b7, #4cc9f0
-  - Community/wholesome: #606c38, #283618, #dda15e
+Return ONLY a JSON object with these exact top-level keys — do not nest them:
+
+{
+  "headline": "Bold, specific, and exciting (4-10 words)",
+  "body_text": "2-4 sentences, 40-70 words",
+  "cta_text": "Action-oriented and urgent (2-4 words)",
+  "image_prompt": "A detailed vivid narrative paragraph for an AI image generator",
+  "color_suggestion": "#hexcolor"
+}
 
 Rules:
-- Headlines must be specific. "Robot Coding for Teens" beats "Teen Tech Event".
-- Body text must answer: Who is this for? What happens? Why should they care?
-- Image prompt must be a descriptive paragraph (not a list). Mention camera angle, lighting, depth of field, and the exact negative space zone.
-- Never include explanatory text outside the JSON.
-
-Example of good output:
-{
-  "headline": "Build a Robot From Scrap",
-  "body_text": "Teens ages 13-17 will solder circuits, attach motors, and program their own mini bots to navigate a maze. No experience needed — all parts provided.",
-  "cta_text": "Claim Your Kit",
-  "image_prompt": "A photorealistic close-up of a teenager's hands soldering a small circuit board on a wooden workbench. Warm workshop lighting streams from above, creating shallow depth of field with soft bokeh. The main subject sits in the upper half of the frame, while the bottom third fades to a smooth, dark gradient with minimal detail — a clean canvas for centered text overlay. Warm amber and steel blue tones, no text in image.",
-  "color_suggestion": "#e85d04"
-}
+- Headlines must be specific. "Robot Coding for Teens" beats "Teen Tech Event". Avoid generic phrases like "Join Us For" or "Come To Our".
+- Body text must answer: Who is this for? What happens? Why should they care? Use active voice. No filler.
+- CTA examples: "Save Your Spot", "Register Free", "Drop In", "Grab a Seat".
+- Image prompt must be a descriptive paragraph. Mention camera angle, lighting, depth of field, and the exact negative space zone ({layout_zone}). No text, no letters, no words in the image.
+- Color suggestion from: #e85d04, #f4a261, #e9c46a, #2a9d8f, #264653, #4361ee, #f72585, #7209b7, #4cc9f0, #606c38, #283618, #dda15e
+- Never include explanatory text outside the JSON. Use the exact keys above — NOT nested objects.
 """
 
 
@@ -148,6 +140,65 @@ def _build_image_prompt(vibe: str, layout: str, event_name: str, theme: str) -> 
         f"No text, no letters, no words, no watermarks in the image."
     )
     return prompt
+
+
+def _extract_flyer_keys(data: dict) -> dict:
+    """Robustly extract the 5 required flyer JSON keys from the AI response.
+
+    The model frequently nests keys under `flyer_copy`, `content`, `design`, etc.
+    This recursively drills into dicts until it finds the flat key set we need.
+    Falls back to partial match if no complete set is found.
+    """
+    TARGET_KEYS = {"headline", "body_text", "cta_text", "image_prompt", "color_suggestion"}
+    BEST = {"best": {}}  # mutable closure for partial fallback
+
+    def _score(obj):
+        """Return number of target keys found in this dict."""
+        if not isinstance(obj, dict):
+            return 0
+        return len(TARGET_KEYS & set(obj.keys()))
+
+    def _search(obj):
+        if isinstance(obj, dict):
+            score = _score(obj)
+            # Keep the best partial match as fallback
+            if score > _score(BEST["best"]):
+                BEST["best"] = {k: obj[k] for k in TARGET_KEYS if k in obj}
+            if score == len(TARGET_KEYS):
+                return {k: obj[k] for k in TARGET_KEYS}
+            for v in obj.values():
+                found = _search(v)
+                if found:
+                    return found
+        elif isinstance(obj, list):
+            for item in obj:
+                found = _search(item)
+                if found:
+                    return found
+        return None
+
+    return _search(data) or BEST["best"]
+
+
+def _merge_keys(data: dict, event_name: str, description: str) -> dict:
+    """Extract keys with smart fallbacks."""
+    extracted = _extract_flyer_keys(data)
+    headline = extracted.get("headline")
+    if not headline or len(headline.strip()) < 2:
+        headline = event_name or "Event"
+    body_text = extracted.get("body_text")
+    if not body_text or len(body_text.strip()) < 2:
+        body_text = description or ""
+    cta_text = extracted.get("cta_text")
+    if not cta_text or len(cta_text.strip()) < 2:
+        cta_text = "Join Us"
+    return {
+        "headline": headline,
+        "body_text": body_text,
+        "cta_text": cta_text,
+        "image_prompt": extracted.get("image_prompt", ""),
+        "color_suggestion": extracted.get("color_suggestion", "#6366f1"),
+    }
 
 
 async def generate_flyer_content(
@@ -179,7 +230,8 @@ Layout: {layout}
 CRITICAL — the flyer will use the "{layout}" layout. That means headline, body, and CTA text will be placed in the {comp['zone']}.
 Therefore the image_prompt MUST describe a background that has significant empty space in the {comp['zone']}.
 
-Generate headline, body, CTA, and an image generation prompt. Make it feel like a real event people would clear their schedule for."""
+Generate headline, body, CTA, and an image generation prompt. Make it feel like a real event people would clear their schedule for.
+Return ONLY a flat JSON object with top-level keys: headline, body_text, cta_text, image_prompt, color_suggestion."""
 
     async with httpx.AsyncClient() as client:
         resp = await client.post(
@@ -219,7 +271,7 @@ Generate headline, body, CTA, and an image generation prompt. Make it feel like 
     content = content.strip()
 
     try:
-        result = json.loads(content)
+        parsed = json.loads(content)
     except json.JSONDecodeError:
         # Attempt basic salvage
         fixed = content
@@ -227,7 +279,10 @@ Generate headline, body, CTA, and an image generation prompt. Make it feel like 
             fixed += '"'
         for _ in range(fixed.count("{") - fixed.count("}")):
             fixed += "}"
-        result = json.loads(fixed)
+        parsed = json.loads(fixed)
+
+    # Extract keys from whatever shape the AI returned
+    result = _merge_keys(parsed, event_name, description)
 
     # If the model ignored the layout instruction, override with our engineered prompt.
     raw_prompt = result.get("image_prompt", "")
@@ -235,9 +290,9 @@ Generate headline, body, CTA, and an image generation prompt. Make it feel like 
         raw_prompt = _build_image_prompt(vibe, layout, event_name, theme)
 
     return {
-        "headline": result.get("headline", event_name),
-        "body_text": result.get("body_text", description or ""),
-        "cta_text": result.get("cta_text", "Join Us"),
+        "headline": result["headline"],
+        "body_text": result["body_text"],
+        "cta_text": result["cta_text"],
         "image_prompt": raw_prompt,
         "color_suggestion": result.get("color_suggestion", "#6366f1"),
     }

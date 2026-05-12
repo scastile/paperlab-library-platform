@@ -224,8 +224,18 @@ async def generate(req: GenerateRequest, auth: tuple = Depends(get_current_user_
         "vibe": req.vibe,
     }
     
+    # Render fallback PNG via PIL (for download endpoint) — client renders HTML live
     png_bytes = render_flyer(render_fields, layout=req.layout)
     png_b64 = base64.b64encode(png_bytes).decode("utf-8")
+    
+    # Also return the raw background image as base64 for the HTML renderer
+    bg_base64 = None
+    if image_path and os.path.exists(image_path):
+        try:
+            bg_bytes = open(image_path, "rb").read()
+            bg_base64 = base64.b64encode(bg_bytes).decode("utf-8")
+        except Exception:
+            pass
     
     # Cleanup temp files
     if image_path:
@@ -246,7 +256,14 @@ async def generate(req: GenerateRequest, auth: tuple = Depends(get_current_user_
         "image_prompt": content["image_prompt"],
         "accent_color": content.get("color_suggestion", "#6366f1"),
         "png_base64": png_b64,
+        "background_base64": bg_base64,
         "layout": req.layout,
+        "vibe": req.vibe,
+        "date": req.date,
+        "time": req.time,
+        "timezone": req.timezone,
+        "location": req.location,
+        "website": req.website,
         "background_description": req.background_description,
         "logo_base64": req.logo_base64,
     }

@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { Loader2, BookOpen } from 'lucide-react'
 import ServiceCard from '../components/ServiceCard'
-import { Rocket, Puzzle, Palette, FileText } from 'lucide-react'
+import { Rocket, Puzzle, Palette } from 'lucide-react'
 import { buildProductUrl } from '../lib/auth-bridge'
 
 const SERVICES = [
@@ -28,20 +28,11 @@ const SERVICES = [
   {
     icon: Palette,
     title: 'Event Flyer Studio',
-    description: 'Describe your event, pick a vibe, get a print-ready flyer. AI-generated imagery with your library\'s info baked in.',
+    description: 'AI-powered campaign generation, escape room design, and event flyers — built for how libraries actually work.',
     href: 'https://flyer.paperlab.xyz',
     tint: 'tint-rose',
     tag: 'Live',
     tagClass: 'bg-emerald-500/10 text-emerald-500',
-  },
-  {
-    icon: FileText,
-    title: 'LibPDF',
-    description: 'Merge, split, convert, OCR, and sign PDFs. A full document toolkit for staff and patrons — no IT setup required.',
-    href: '#',
-    tint: 'tint-emerald',
-    tag: 'Coming Soon',
-    tagClass: 'bg-amber-500/10 text-amber-500',
   },
 ]
 
@@ -113,7 +104,7 @@ export default function LandingPage() {
         </section>
 
         {/* Product Cards */}
-        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-20">
+        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-20">
           {SERVICES.map((s) => (
             <ServiceCard key={s.title} {...s} href={user ? s.href : undefined} />
           ))}
@@ -136,7 +127,6 @@ export default function LandingPage() {
                 { Icon: Rocket, tint: 'bg-indigo-500/10' },
                 { Icon: Puzzle, tint: 'bg-violet-500/10' },
                 { Icon: Palette, tint: 'bg-rose-500/10' },
-                { Icon: FileText, tint: 'bg-emerald-500/10' },
               ].map(({ Icon, tint }, i) => (
                 <div key={i} className={`w-10 h-10 rounded-full ${tint} flex items-center justify-center`}>
                   <Icon className="w-5 h-5 text-[var(--accent-solid)]" />

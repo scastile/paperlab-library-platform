@@ -7,8 +7,10 @@ import {
 } from 'lucide-react'
 import { useAuth, AuthProvider } from './context/AuthContext'
 import Header from './components/Header'
+import FlyerPreview from './components/FlyerPreview'
 
 const API_BASE = '/api'
+const FONTS_URL = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap'
 
 const VIBES = [
   "Modern & Sleek",
@@ -311,7 +313,7 @@ function SmartCanvasForm({ onGenerate, loading }) {
   )
 }
 
-function FlyerEditor({ flyer, onUpdate, onSave, saving, onDownloadPng, onDownloadPdf, getToken }) {
+function FlyerEditor({ flyer, onSave, saving, onDownloadPng, onDownloadPdf, getToken }) {
   const [headline, setHeadline] = useState(flyer.headline || "")
   const [bodyText, setBodyText] = useState(flyer.body_text || "")
   const [ctaText, setCtaText] = useState(flyer.cta_text || "")
@@ -320,61 +322,61 @@ function FlyerEditor({ flyer, onUpdate, onSave, saving, onDownloadPng, onDownloa
   const [timezone, setTimezone] = useState(flyer.timezone || "")
   const [location, setLocation] = useState(flyer.location || "")
   const [website, setWebsite] = useState(flyer.website || "")
-  const [preview, setPreview] = useState(flyer.png_base64 || "")
-  const [regenerating, setRegenerating] = useState(false)
-  const [regenError, setRegenError] = useState('')
+  const [editError, setEditError] = useState('')
 
-  const handleRegenerate = async () => {
-    setRegenerating(true)
-    setRegenError('')
-    try {
-      const res = await apiCall('/regenerate', {
-        method: 'POST',
-        body: JSON.stringify({
-          headline, body_text: bodyText, cta_text: ctaText, date, time, timezone, location, website,
-          layout: flyer.layout, vibe: flyer.vibe, accent_color: flyer.accent_color
-        })
-      }, getToken)
-      const data = await res.json()
-      setPreview(data.png_base64)
-    } catch (e) {
-      setRegenError(e.message || 'Failed to regenerate')
-      console.error(e)
-    } finally {
-      setRegenerating(false)
-    }
+  // Computed bg image for the HTML renderer
+  const bgImage = flyer.background_base64
+    ? `data:image/png;base64,${flyer.background_base64}`
+    : null
+  const logo = flyer.logo_base64
+    ? `data:image/png;base64,${flyer.logo_base64}`
+    : null
+
+  // Pick bg color based on vibe if no bg image
+  const bgFromVibe = {
+    "Modern & Sleek": "#1a1a2e",
+    "Whimsical": "#FFF0F5",
+    "Vintage Scholastic": "#F5F5DC",
+    "High-Energy": "#FFF8DC",
+    "Calm & Relaxing": "#F0F8FF",
+    "Festive": "#FFF8DC",
   }
+  const fallbackBg = bgFromVibe[flyer.vibe] || '#f5f5f7'
 
   const handleSave = () => {
-    onSave({ ...flyer, headline, body_text: bodyText, cta_text: ctaText, date, time, timezone, location, website, png_base64: preview })
+    onSave({
+      headline, body_text: bodyText, cta_text: ctaText,
+      date, time, timezone, location, website,
+      png_base64: flyer.png_base64,
+    })
   }
 
   return (
     <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8">
-      {/* Preview */}
+      {/* HTML Preview */}
       <div className="space-y-4">
         <div className="card-lift p-4">
           <p className="section-label mb-3">Preview</p>
-          <div className="rounded-lg overflow-hidden bg-black/5 flex items-center justify-center min-h-[400px]">
-            {preview ? (
-              <img src={`data:image/png;base64,${preview}`} alt="Flyer preview" className="max-w-full h-auto shadow-lg" />
-            ) : (
-              <p className="text-secondary">No preview</p>
-            )}
+          <div className="rounded-lg overflow-hidden bg-card flex items-center justify-center min-h-[400px] p-4">
+            <FlyerPreview
+              headline={headline}
+              body={bodyText}
+              cta={ctaText}
+              date={date}
+              time={time}
+              location={location}
+              accent={flyer.accent_color || '#6366f1'}
+              bg={bgImage ? '#f5f5f7' : fallbackBg}
+              bgImage={bgImage}
+              logo={logo}
+              layout={flyer.layout || 'poster'}
+            />
           </div>
         </div>
         <div className="flex flex-wrap gap-3 no-print">
           <button onClick={handleSave} disabled={saving} className="btn-gradient disabled:opacity-60">
             <Save className="w-4 h-4" />
             {saving ? 'Saving...' : 'Save Flyer'}
-          </button>
-          <button onClick={onDownloadPng} className="btn-outline">
-            <FileImage className="w-4 h-4" />
-            Download PNG
-          </button>
-          <button onClick={onDownloadPdf} className="btn-outline">
-            <Printer className="w-4 h-4" />
-            Download PDF
           </button>
         </div>
       </div>
@@ -434,13 +436,6 @@ function FlyerEditor({ flyer, onUpdate, onSave, saving, onDownloadPng, onDownloa
               className="w-full px-4 py-2.5 rounded-lg bg-page border border-default text-primary focus:outline-none focus:ring-2 focus:ring-accent-solid/30" />
           </div>
         </div>
-        <button onClick={handleRegenerate} disabled={regenerating} className="btn-outline w-full justify-center disabled:opacity-60">
-          {regenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-          {regenerating ? 'Updating preview...' : 'Update Preview (2 credits)'}
-        </button>
-        {regenError && (
-          <p className="text-red-500 text-sm text-center">{regenError}</p>
-        )}
       </div>
     </div>
   )
