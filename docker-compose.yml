@@ -1,7 +1,9 @@
 services:
   # --- Library Launchpad ---
   launchpad-backend:
-    build: ./apps/library-launchpad/backend
+    build:
+      context: .
+      dockerfile: apps/library-launchpad/backend/Dockerfile
     env_file: ./apps/library-launchpad/backend/.env
     volumes:
       - ./apps/library-launchpad/data:/app/data
@@ -22,7 +24,7 @@ services:
       context: ./apps/library-launchpad/frontend
       args:
         VITE_SUPABASE_URL: http://10.0.0.179:8001
-        VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjowLCJleHAiOjk5OTk5OTk5OTl9.o4txs_Q5kj86L9JFbZS9uULFTMh5Zjw6FLKGhNM-xCc
+        VITE_SUPABASE_ANON_KEY: eyJhbG...-xCc
     ports:
       - "8200:80"
     extra_hosts:
@@ -35,7 +37,9 @@ services:
 
   # --- Escape Room Designer ---
   escape-backend:
-    build: ./apps/escape-room-designer/backend
+    build:
+      context: .
+      dockerfile: apps/escape-room-designer/backend/Dockerfile
     env_file: ./apps/escape-room-designer/backend/.env
     volumes:
       - ./apps/escape-room-designer/data:/app/data
@@ -56,7 +60,7 @@ services:
       context: ./apps/escape-room-designer/frontend
       args:
         VITE_SUPABASE_URL: http://10.0.0.179:8001
-        VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjowLCJleHAiOjk5OTk5OTk5OTl9.o4txs_Q5kj86L9JFbZS9uULFTMh5Zjw6FLKGhNM-xCc
+        VITE_SUPABASE_ANON_KEY: eyJhbG...-xCc
     ports:
       - "8203:80"
     networks:
@@ -67,7 +71,9 @@ services:
 
   # --- Event Flyer Studio ---
   flyer-backend:
-    build: ./apps/event-flyer-studio/backend
+    build:
+      context: .
+      dockerfile: apps/event-flyer-studio/backend/Dockerfile
     env_file: ./apps/event-flyer-studio/backend/.env
     environment:
       - AI_MODEL=google/gemini-2.5-flash
@@ -93,7 +99,7 @@ services:
       context: ./apps/event-flyer-studio/frontend
       args:
         VITE_SUPABASE_URL: http://10.0.0.179:8001
-        VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjowLCJleHAiOjk5OTk5OTk5OTl9.o4txs_Q5kj86L9JFbZS9uULFTMh5Zjw6FLKGhNM-xCc
+        VITE_SUPABASE_ANON_KEY: eyJhbG...-xCc
     ports:
       - "8204:80"
     networks:
@@ -108,7 +114,7 @@ services:
       context: ./apps/libpaper-landing
       args:
         VITE_SUPABASE_URL: http://10.0.0.179:8001
-        VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjowLCJleHAiOjk5OTk5OTk5OTl9.o4txs_Q5kj86L9JFbZS9uULFTMh5Zjw6FLKGhNM-xCc
+        VITE_SUPABASE_ANON_KEY: eyJhbG...-xCc
     ports:
       - "8202:80"
     networks:
@@ -120,7 +126,9 @@ services:
 
   # --- LibBrain ---
   libbrain-backend:
-    build: ./apps/libbrain/backend
+    build:
+      context: .
+      dockerfile: apps/libbrain/backend/Dockerfile
     env_file: ./apps/libbrain/backend/.env
     environment:
       - DB_PATH=/app/data/libbrain.db

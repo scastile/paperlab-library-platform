@@ -140,4 +140,78 @@ body {
   .border-strong   { border-color: var(--border-strong); }
 
   .accent-solid    { color: var(--accent-solid); }
+
+  /* Stripe-level design additions */
+  @keyframes gradient-shift {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-6px); }
+  }
+  .animate-gradient-slow {
+    animation: gradient-shift 8s ease-in-out infinite;
+    background-size: 200% 200%;
+  }
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+  .glass {
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+  }
+  .design-stripe .auth-card {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    border-radius: 16px;
+  }
+  .design-stripe .auth-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: 
+      radial-gradient(ellipse at 20% 20%, rgba(99, 102, 241, 0.08) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 80%, rgba(139, 92, 246, 0.06) 0%, transparent 50%),
+      radial-gradient(ellipse at 50% 0%, rgba(99, 102, 241, 0.04) 0%, transparent 40%);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .design-stripe .auth-card > * {
+    position: relative;
+    z-index: 1;
+  }
+  .design-stripe .auth-input {
+    border: 1px solid var(--border-default);
+    border-radius: 10px;
+    transition: all 200ms var(--ease-out);
+  }
+  .design-stripe .auth-input:focus {
+    border-color: var(--accent-solid);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15), 0 1px 2px rgba(0, 0, 0, 0.04);
+  }
+  .design-stripe .auth-btn {
+    background: linear-gradient(135deg, var(--accent-from), var(--accent-to));
+    border-radius: 10px;
+    font-size: 0.9375rem;
+    box-shadow: 0 1px 3px rgba(99, 102, 241, 0.3), 0 1px 2px rgba(0, 0, 0, 0.08);
+    transition: all 200ms var(--ease-out);
+  }
+  .design-stripe .auth-btn:hover:not(:disabled) {
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4), 0 2px 4px rgba(0, 0, 0, 0.08);
+    transform: translateY(-1px);
+  }
+  .design-stripe .hero-headline {
+    font-size: clamp(2.5rem, 5vw, 3.75rem);
+    letter-spacing: -0.035em;
+    line-height: 1.1;
+  }
+  .design-stripe .hero-sub {
+    font-size: clamp(1.1rem, 2vw, 1.25rem);
+    line-height: 1.7;
+  }
 }

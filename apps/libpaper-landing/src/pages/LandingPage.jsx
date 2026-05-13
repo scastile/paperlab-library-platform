@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { Loader2, BookOpen } from 'lucide-react'
+import { Loader2, BookOpen, Palette, Zap } from 'lucide-react'
 import ServiceCard from '../components/ServiceCard'
-import { Rocket, Puzzle, Palette } from 'lucide-react'
+import { Rocket, Puzzle } from 'lucide-react'
 import { buildProductUrl } from '../lib/auth-bridge'
 
 const SERVICES = [
@@ -45,6 +45,7 @@ export default function LandingPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [stripeDesign, setStripeDesign] = useState(() => localStorage.getItem('stripeDesign') === '1')
 
   if (user) {
     const redirect = searchParams.get('redirect')
@@ -85,39 +86,61 @@ export default function LandingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-page">
-      {/* Theme Toggle */}
-      <ThemeToggle />
+    <div className={`min-h-screen bg-page ${stripeDesign ? 'design-stripe' : ''}`}>
+      {/* Design + Theme Toggles */}
+      <div className="flex fixed top-5 right-5 gap-2 z-50">
+        <button
+          onClick={() => {
+            const next = !stripeDesign
+            setStripeDesign(next)
+            localStorage.setItem('stripeDesign', next ? '1' : '0')
+          }}
+          className="w-9 h-9 rounded-full bg-card border border-default flex items-center justify-center text-base shadow-sm hover:shadow-card transition-all"
+          aria-label="Toggle stripe design"
+          title={stripeDesign ? 'Switch to simple design' : 'Switch to Stripe design'}
+        >
+          {stripeDesign ? <Zap className="w-4 h-4" /> : <Palette className="w-4 h-4" />}
+        </button>
+        <ThemeToggle />
+      </div>
 
       <div className="max-w-6xl mx-auto px-6">
+        {/* Floating gradient blobs behind hero */}
+        {stripeDesign && (
+          <div className="absolute top-0 left-0 right-0 h-[700px] overflow-hidden pointer-events-none">
+            <div className="absolute top-20 left-1/4 w-96 h-96 bg-[var(--accent-solid)]/5 rounded-full blur-3xl animate-float" />
+            <div className="absolute top-40 right-1/4 w-80 h-80 bg-purple-500/5 rounded-full blur-3xl animate-float" style={{ animationDelay: '-3s' }} />
+          </div>
+        )}
+
         {/* Hero */}
-        <section className="text-center pt-20 pb-12">
-          <h1 className="text-4xl md:text-5xl font-bold text-primary tracking-tight leading-tight">
+        <section className="text-center pt-20 pb-12 relative">
+          <h1 className={`${stripeDesign ? 'hero-headline' : 'text-4xl md:text-5xl font-bold text-primary tracking-tight leading-tight'} leading-tight`}>
             Turn Any Topic Into a{' '}
             <span className="bg-gradient-to-r from-[var(--accent-from)] to-[var(--accent-to)] bg-clip-text text-transparent">
               Library Event
             </span>
           </h1>
-          <p className="text-lg text-secondary mt-4 max-w-2xl mx-auto leading-relaxed">
+          <p className={`text-lg text-secondary mt-4 max-w-2xl mx-auto leading-relaxed ${stripeDesign ? 'hero-sub' : ''}`}>
             AI-powered promotional campaigns, escape rooms, event flyers, and document tools — built for how libraries actually work.
           </p>
         </section>
 
         {/* Product Cards */}
-        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-20">
+        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-20 relative">
           {SERVICES.map((s) => (
             <ServiceCard key={s.title} {...s} href={user ? s.href : undefined} />
           ))}
         </section>
 
         {/* Auth + Demo + Pricing Grid */}
-        <section className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-20">
+        <section className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-20 relative">
           {/* Auth Card */}
-          <div className="lg:col-span-3 card-lift p-8 flex flex-col">
-            <h2 className="text-xl font-bold text-primary mb-1">
+          <div className={`lg:col-span-3 ${stripeDesign ? 'auth-card' : 'card-lift'} p-8 flex flex-col`}>
+            <h2 className={`font-bold text-primary mb-1 ${stripeDesign ? 'text-2xl tracking-tight' : 'text-xl'}`}>
               {mode === 'signin' ? 'Welcome back' : 'Create your account'}
             </h2>
-            <p className="text-sm text-secondary mb-6">
+            <p className={`text-secondary ${stripeDesign ? 'text-base mb-8' : 'text-sm mb-6'}`}>
               {mode === 'signin' ? 'Sign in to your campaigns' : 'Get 10 free credits to try it out'}
             </p>
 
@@ -152,7 +175,7 @@ export default function LandingPage() {
                   placeholder="you@library.org"
                   required
                   autoComplete="email"
-                  className="w-full px-4 py-3 rounded-lg bg-input border border-default text-primary placeholder:text-tertiary focus:outline-none focus:ring-2 focus:ring-[var(--accent-solid)]/30 text-[15px]"
+                  className={`w-full px-4 py-3 bg-input text-primary placeholder:text-tertiary focus:outline-none text-[15px] ${stripeDesign ? 'auth-input' : 'rounded-lg bg-input border border-default focus:ring-2 focus:ring-[var(--accent-solid)]/30'}`}
                 />
               </div>
               <div>
@@ -167,11 +190,15 @@ export default function LandingPage() {
                   required
                   minLength={6}
                   autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
-                  className="w-full px-4 py-3 rounded-lg bg-input border border-default text-primary placeholder:text-tertiary focus:outline-none focus:ring-2 focus:ring-[var(--accent-solid)]/30 text-[15px]"
+                  className={`w-full px-4 py-3 bg-input text-primary placeholder:text-tertiary focus:outline-none text-[15px] ${stripeDesign ? 'auth-input' : 'rounded-lg bg-input border border-default focus:ring-2 focus:ring-[var(--accent-solid)]/30'}`}
                 />
               </div>
 
-              <button type="submit" disabled={loading} className="btn-gradient w-full justify-center disabled:opacity-50">
+              <button
+                type="submit"
+                disabled={loading}
+                className={`w-full justify-center disabled:opacity-50 ${stripeDesign ? 'auth-btn btn-gradient' : 'btn-gradient'}`}
+              >
                 {loading ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : mode === 'signin' ? (
@@ -200,7 +227,7 @@ export default function LandingPage() {
             </form>
 
             <div className="mt-auto pt-6">
-              <div className="bg-page rounded-lg p-5 text-center">
+              <div className={`${stripeDesign ? 'rounded-lg bg-[var(--accent-solid)]/[0.04] p-5 text-center' : 'bg-page rounded-lg p-5 text-center'}`}>
                 <p className="font-semibold text-[var(--accent-solid)] text-base">Get 10 free credits on signup</p>
                 <p className="text-secondary text-sm mt-1.5">Enough for a full campaign + rerolls, or try any product</p>
               </div>
@@ -224,14 +251,14 @@ export default function LandingPage() {
             </div>
 
             {/* Pricing Card */}
-            <div className="card-lift p-6">
-              <div className="bg-page rounded-lg p-5 text-center mb-4">
+            <div className={`card-lift p-6 ${stripeDesign ? 'animate-float' : ''}`} style={stripeDesign ? { animationDelay: '-1.5s' } : {}}>
+              <div className={`${stripeDesign ? 'rounded-lg bg-[var(--accent-solid)]/[0.04] p-5 text-center mb-4' : 'bg-page rounded-lg p-5 text-center mb-4'}`}>
                 <p className="font-semibold text-[var(--accent-solid)] text-base">10 free credits on signup</p>
                 <p className="text-secondary text-sm mt-1.5">No card required · Enough for a full campaign</p>
               </div>
 
               <p className="text-xs font-semibold text-secondary uppercase tracking-wider mb-2">
-                Monthly Plans <span className="text-[var(--accent-solid)] normal-case ml-1">Best Value</span>
+                Monthly Plans <span className="text-[var(--accent-solid)] normal-case font-medium ml-1">Best Value</span>
               </p>
               <div className="space-y-1.5 text-sm">
                 <div className="flex justify-between items-baseline">
@@ -294,7 +321,7 @@ function ThemeToggle() {
   return (
     <button
       onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')}
-      className="fixed top-5 right-5 w-9 h-9 rounded-full bg-card border border-default flex items-center justify-center text-base shadow-sm hover:shadow-card transition-all z-50"
+      className="w-9 h-9 rounded-full bg-card border border-default flex items-center justify-center text-base shadow-sm hover:shadow-card transition-all"
       aria-label="Toggle dark mode"
     >
       {theme === 'dark' ? '☀️' : '🌙'}
