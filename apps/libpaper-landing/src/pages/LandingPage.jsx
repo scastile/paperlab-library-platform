@@ -87,8 +87,15 @@ export default function LandingPage() {
 
   return (
     <div className={`min-h-screen bg-page ${stripeDesign ? 'design-stripe' : ''}`}>
+      {/* Full-page gradient background (Stripe-style) */}
+      {stripeDesign && (
+        <div className="page-gradient-bg">
+          <div className="gradient-mesh" />
+        </div>
+      )}
+
       {/* Design + Theme Toggles */}
-      <div className="flex fixed top-5 right-5 gap-2 z-50">
+      <div className="fixed top-5 right-5 flex gap-2 z-50">
         <button
           onClick={() => {
             const next = !stripeDesign
@@ -104,18 +111,10 @@ export default function LandingPage() {
         <ThemeToggle />
       </div>
 
-      <div className="max-w-6xl mx-auto px-6">
-        {/* Floating gradient blobs behind hero */}
-        {stripeDesign && (
-          <div className="absolute top-0 left-0 right-0 h-[700px] overflow-hidden pointer-events-none">
-            <div className="absolute top-20 left-1/4 w-96 h-96 bg-[var(--accent-solid)]/5 rounded-full blur-3xl animate-float" />
-            <div className="absolute top-40 right-1/4 w-80 h-80 bg-purple-500/5 rounded-full blur-3xl animate-float" style={{ animationDelay: '-3s' }} />
-          </div>
-        )}
-
+      <div className={`relative z-10 max-w-6xl mx-auto px-6`}>
         {/* Hero */}
         <section className="text-center pt-20 pb-12 relative">
-          <h1 className={`${stripeDesign ? 'hero-headline' : 'text-4xl md:text-5xl font-bold text-primary tracking-tight leading-tight'} leading-tight`}>
+          <h1 className={`${stripeDesign ? 'hero-headline' : 'text-4xl md:text-5xl font-bold text-primary tracking-tight'} leading-tight`}>
             Turn Any Topic Into a{' '}
             <span className="bg-gradient-to-r from-[var(--accent-from)] to-[var(--accent-to)] bg-clip-text text-transparent">
               Library Event
@@ -136,7 +135,7 @@ export default function LandingPage() {
         {/* Auth + Demo + Pricing Grid */}
         <section className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-20 relative">
           {/* Auth Card */}
-          <div className={`lg:col-span-3 ${stripeDesign ? 'auth-card' : 'card-lift'} p-8 flex flex-col`}>
+          <div className={`lg:col-span-3 ${stripeDesign ? 'glass-card' : 'card-lift'} p-8 flex flex-col`}>
             <h2 className={`font-bold text-primary mb-1 ${stripeDesign ? 'text-2xl tracking-tight' : 'text-xl'}`}>
               {mode === 'signin' ? 'Welcome back' : 'Create your account'}
             </h2>
@@ -147,12 +146,12 @@ export default function LandingPage() {
             {/* Product Icon Graphic */}
             <div className="flex items-center justify-start gap-2 mb-6">
               {[
-                { Icon: Rocket, tint: 'bg-indigo-500/10' },
-                { Icon: Puzzle, tint: 'bg-violet-500/10' },
-                { Icon: Palette, tint: 'bg-rose-500/10' },
-              ].map(({ Icon, tint }, i) => (
-                <div key={i} className={`w-10 h-10 rounded-full ${tint} flex items-center justify-center`}>
-                  <Icon className="w-5 h-5 text-[var(--accent-solid)]" />
+                { Icon: Rocket, color: 'var(--accent-solid)', bg: 'var(--tint-indigo)' },
+                { Icon: Puzzle, color: '#8b5cf6', bg: 'var(--tint-violet)' },
+                { Icon: Palette, color: '#f43f5e', bg: 'var(--tint-rose)' },
+              ].map(({ Icon, color, bg }, i) => (
+                <div key={i} className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: bg }}>
+                  <Icon className="w-5 h-5" style={{ color }} />
                 </div>
               ))}
             </div>
@@ -175,7 +174,7 @@ export default function LandingPage() {
                   placeholder="you@library.org"
                   required
                   autoComplete="email"
-                  className={`w-full px-4 py-3 bg-input text-primary placeholder:text-tertiary focus:outline-none text-[15px] ${stripeDesign ? 'auth-input' : 'rounded-lg bg-input border border-default focus:ring-2 focus:ring-[var(--accent-solid)]/30'}`}
+                  className="w-full px-4 py-3 text-primary placeholder:text-tertiary focus:outline-none text-[15px] rounded-lg border border-default bg-input/60 backdrop-blur-sm focus:border-[var(--accent-solid)] focus:ring-2 focus:ring-[var(--accent-solid)]/20 transition-all"
                 />
               </div>
               <div>
@@ -190,14 +189,14 @@ export default function LandingPage() {
                   required
                   minLength={6}
                   autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
-                  className={`w-full px-4 py-3 bg-input text-primary placeholder:text-tertiary focus:outline-none text-[15px] ${stripeDesign ? 'auth-input' : 'rounded-lg bg-input border border-default focus:ring-2 focus:ring-[var(--accent-solid)]/30'}`}
+                  className="w-full px-4 py-3 text-primary placeholder:text-tertiary focus:outline-none text-[15px] rounded-lg border border-default bg-input/60 backdrop-blur-sm focus:border-[var(--accent-solid)] focus:ring-2 focus:ring-[var(--accent-solid)]/20 transition-all"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={loading}
-                className={`w-full justify-center disabled:opacity-50 ${stripeDesign ? 'auth-btn btn-gradient' : 'btn-gradient'}`}
+                className={`w-full justify-center disabled:opacity-50 ${stripeDesign ? 'auth-btn' : ''} bg-gradient-to-br from-[var(--accent-from)] to-[var(--accent-to)] text-white font-semibold py-3 px-6 rounded-lg hover:shadow-lg hover:shadow-[var(--accent-solid)]/25 hover:-translate-y-0.5 transition-all disabled:cursor-not-allowed`}
               >
                 {loading ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -227,7 +226,7 @@ export default function LandingPage() {
             </form>
 
             <div className="mt-auto pt-6">
-              <div className={`${stripeDesign ? 'rounded-lg bg-[var(--accent-solid)]/[0.04] p-5 text-center' : 'bg-page rounded-lg p-5 text-center'}`}>
+              <div className="rounded-lg border border-[var(--accent-solid)]/10 bg-[var(--accent-solid)]/[0.03] backdrop-blur-sm p-5 text-center">
                 <p className="font-semibold text-[var(--accent-solid)] text-base">Get 10 free credits on signup</p>
                 <p className="text-secondary text-sm mt-1.5">Enough for a full campaign + rerolls, or try any product</p>
               </div>
@@ -237,7 +236,7 @@ export default function LandingPage() {
           {/* Right Stack: Demo + Pricing */}
           <div className="lg:col-span-2 flex flex-col gap-5">
             {/* Demo Card */}
-            <div className="card-lift p-7 text-center flex flex-col items-center justify-center flex-1">
+            <div className={`${stripeDesign ? 'glass-card' : 'card-lift'} p-7 text-center flex flex-col items-center justify-center flex-1`}>
               <div className="w-12 h-12 rounded-xl tint-indigo flex items-center justify-center mb-4">
                 <BookOpen className="w-6 h-6 text-[var(--accent-solid)]" />
               </div>
@@ -251,8 +250,8 @@ export default function LandingPage() {
             </div>
 
             {/* Pricing Card */}
-            <div className={`card-lift p-6 ${stripeDesign ? 'animate-float' : ''}`} style={stripeDesign ? { animationDelay: '-1.5s' } : {}}>
-              <div className={`${stripeDesign ? 'rounded-lg bg-[var(--accent-solid)]/[0.04] p-5 text-center mb-4' : 'bg-page rounded-lg p-5 text-center mb-4'}`}>
+            <div className={`${stripeDesign ? 'glass-card' : 'card-lift'} p-6`}>
+              <div className="rounded-lg border border-[var(--accent-solid)]/10 bg-[var(--accent-solid)]/[0.03] backdrop-blur-sm p-5 text-center mb-4">
                 <p className="font-semibold text-[var(--accent-solid)] text-base">10 free credits on signup</p>
                 <p className="text-secondary text-sm mt-1.5">No card required · Enough for a full campaign</p>
               </div>
@@ -300,7 +299,7 @@ export default function LandingPage() {
       </div>
 
       {/* Footer */}
-      <footer className="border-t border-subtle">
+      <footer className={`relative z-10 border-t ${stripeDesign ? 'border-white/10' : 'border-subtle'}`}>
         <div className="max-w-6xl mx-auto px-6 py-5 flex items-center justify-center gap-2 text-sm text-secondary">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
           <span>Powered by <span className="text-primary font-medium">PaperLab</span></span>
