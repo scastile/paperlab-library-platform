@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { Loader2, BookOpen, Palette, Zap } from 'lucide-react'
+import { Loader2, BookOpen } from 'lucide-react'
 import ServiceCard from '../components/ServiceCard'
 import { Rocket, Puzzle } from 'lucide-react'
 import { buildProductUrl } from '../lib/auth-bridge'
@@ -26,7 +26,7 @@ const SERVICES = [
     tagClass: 'bg-emerald-500/10 text-emerald-500',
   },
   {
-    icon: Palette,
+    icon: 'Palette',
     title: 'Event Flyer Studio',
     description: 'AI-powered campaign generation, escape room design, and event flyers — built for how libraries actually work.',
     href: 'https://flyer.paperlab.xyz',
@@ -45,7 +45,6 @@ export default function LandingPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const [stripeDesign, setStripeDesign] = useState(() => localStorage.getItem('stripeDesign') === '1')
 
   if (user) {
     const redirect = searchParams.get('redirect')
@@ -86,41 +85,27 @@ export default function LandingPage() {
   }
 
   return (
-    <div className={`min-h-screen bg-page ${stripeDesign ? 'design-stripe' : ''}`}>
-      {/* Full-page gradient background (Stripe-style) */}
-      {stripeDesign && (
-        <div className="page-gradient-bg">
-          <div className="gradient-mesh" />
-        </div>
-      )}
+    <div className="min-h-screen bg-page design-stripe">
+      {/* Full-page gradient background */}
+      <div className="page-gradient-bg">
+        <div className="gradient-mesh" />
+      </div>
 
-      {/* Design + Theme Toggles */}
-      <div className="fixed top-5 right-5 flex gap-2 z-50">
-        <button
-          onClick={() => {
-            const next = !stripeDesign
-            setStripeDesign(next)
-            localStorage.setItem('stripeDesign', next ? '1' : '0')
-          }}
-          className="w-9 h-9 rounded-full bg-card border border-default flex items-center justify-center text-base shadow-sm hover:shadow-card transition-all"
-          aria-label="Toggle stripe design"
-          title={stripeDesign ? 'Switch to simple design' : 'Switch to Stripe design'}
-        >
-          {stripeDesign ? <Zap className="w-4 h-4" /> : <Palette className="w-4 h-4" />}
-        </button>
+      {/* Theme Toggle */}
+      <div className="fixed top-5 right-5 z-50">
         <ThemeToggle />
       </div>
 
-      <div className={`relative z-10 max-w-6xl mx-auto px-6`}>
+      <div className="relative z-10 max-w-6xl mx-auto px-6">
         {/* Hero */}
         <section className="text-center pt-20 pb-12 relative">
-          <h1 className={`${stripeDesign ? 'hero-headline' : 'text-4xl md:text-5xl font-bold text-primary tracking-tight'} leading-tight`}>
+          <h1 className="hero-headline leading-tight">
             Turn Any Topic Into a{' '}
             <span className="bg-gradient-to-r from-[var(--accent-from)] to-[var(--accent-to)] bg-clip-text text-transparent">
               Library Event
             </span>
           </h1>
-          <p className={`text-lg text-secondary mt-4 max-w-2xl mx-auto leading-relaxed ${stripeDesign ? 'hero-sub' : ''}`}>
+          <p className="text-lg text-secondary mt-4 max-w-2xl mx-auto leading-relaxed hero-sub">
             AI-powered promotional campaigns, escape rooms, event flyers, and document tools — built for how libraries actually work.
           </p>
         </section>
@@ -135,11 +120,11 @@ export default function LandingPage() {
         {/* Auth + Demo + Pricing Grid */}
         <section className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-20 relative">
           {/* Auth Card */}
-          <div className={`lg:col-span-3 ${stripeDesign ? 'glass-card' : 'card-lift'} p-8 flex flex-col`}>
-            <h2 className={`font-bold text-primary mb-1 ${stripeDesign ? 'text-2xl tracking-tight' : 'text-xl'}`}>
+          <div className="lg:col-span-3 glass-card p-8 flex flex-col">
+            <h2 className="text-2xl font-bold text-primary tracking-tight mb-1">
               {mode === 'signin' ? 'Welcome back' : 'Create your account'}
             </h2>
-            <p className={`text-secondary ${stripeDesign ? 'text-base mb-8' : 'text-sm mb-6'}`}>
+            <p className="text-base text-secondary mb-8">
               {mode === 'signin' ? 'Sign in to your campaigns' : 'Get 10 free credits to try it out'}
             </p>
 
@@ -196,7 +181,7 @@ export default function LandingPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className={`w-full justify-center disabled:opacity-50 ${stripeDesign ? 'auth-btn' : ''} bg-gradient-to-br from-[var(--accent-from)] to-[var(--accent-to)] text-white font-semibold py-3 px-6 rounded-lg hover:shadow-lg hover:shadow-[var(--accent-solid)]/25 hover:-translate-y-0.5 transition-all disabled:cursor-not-allowed`}
+                className="w-full justify-center disabled:opacity-50 bg-gradient-to-br from-[var(--accent-from)] to-[var(--accent-to)] text-white font-semibold py-3 px-6 rounded-lg hover:shadow-lg hover:shadow-[var(--accent-solid)]/25 hover:-translate-y-0.5 transition-all disabled:cursor-not-allowed flex items-center"
               >
                 {loading ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -236,7 +221,7 @@ export default function LandingPage() {
           {/* Right Stack: Demo + Pricing */}
           <div className="lg:col-span-2 flex flex-col gap-5">
             {/* Demo Card */}
-            <div className={`${stripeDesign ? 'glass-card' : 'card-lift'} p-7 text-center flex flex-col items-center justify-center flex-1`}>
+            <div className="glass-card p-7 text-center flex flex-col items-center justify-center flex-1">
               <div className="w-12 h-12 rounded-xl tint-indigo flex items-center justify-center mb-4">
                 <BookOpen className="w-6 h-6 text-[var(--accent-solid)]" />
               </div>
@@ -250,7 +235,7 @@ export default function LandingPage() {
             </div>
 
             {/* Pricing Card */}
-            <div className={`${stripeDesign ? 'glass-card' : 'card-lift'} p-6`}>
+            <div className="glass-card p-6">
               <div className="rounded-lg border border-[var(--accent-solid)]/10 bg-[var(--accent-solid)]/[0.03] backdrop-blur-sm p-5 text-center mb-4">
                 <p className="font-semibold text-[var(--accent-solid)] text-base">10 free credits on signup</p>
                 <p className="text-secondary text-sm mt-1.5">No card required · Enough for a full campaign</p>
@@ -299,7 +284,7 @@ export default function LandingPage() {
       </div>
 
       {/* Footer */}
-      <footer className={`relative z-10 border-t ${stripeDesign ? 'border-white/10' : 'border-subtle'}`}>
+      <footer className="relative z-10 border-t border-white/10">
         <div className="max-w-6xl mx-auto px-6 py-5 flex items-center justify-center gap-2 text-sm text-secondary">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
           <span>Powered by <span className="text-primary font-medium">PaperLab</span></span>
