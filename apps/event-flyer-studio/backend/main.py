@@ -9,7 +9,7 @@ import io
 import httpx
 import tempfile
 
-from config import build_cors_origins, require_env
+from config import ALLOWED_ORIGINS, require_env
 from rate_limit import RateLimiterMiddleware
 from credit_proxy import proxy_request
 from auth import get_current_user, get_current_user_with_token
@@ -24,7 +24,6 @@ load_dotenv()
 # Fail fast if critical env vars are missing
 require_env(["OPENROUTER_API_KEY", "SUPABASE_JWT_SECRET"])
 
-ALLOWED_ORIGINS = build_cors_origins()
 
 LAUNCHPAD_URL = os.getenv("LAUNCHPAD_URL", "http://launchpad-backend:8000")
 FAL_KEY = os.getenv("FAL_KEY", "")

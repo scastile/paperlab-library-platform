@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from config import build_cors_origins, require_env
+from config import ALLOWED_ORIGINS, require_all
 from database import init_db
 from resilience import provider_chain
 
@@ -15,8 +15,7 @@ from routes.settings import router as settings_router
 load_dotenv = __import__("dotenv").load_dotenv
 load_dotenv()
 
-require_env()
-ALLOWED_ORIGINS = build_cors_origins()
+require_all()
 
 
 @asynccontextmanager

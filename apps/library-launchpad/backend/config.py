@@ -1,10 +1,11 @@
 """Library Launchpad backend config."""
+import sys
 import os
 
 # Add parent dir so _shared is importable
-sys_dir = os.path.dirname(os.path.abspath(__file__))
-if sys_dir not in os.sys.path:
-    os.sys.path.insert(0, sys_dir)
+_app_dir = os.path.dirname(os.path.abspath(__file__))
+if _app_dir not in sys.path:
+    sys.path.insert(0, _app_dir)
 
 from _shared.config import build_cors_origins, require_env
 

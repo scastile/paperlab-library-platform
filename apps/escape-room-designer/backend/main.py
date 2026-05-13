@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 import json
 import os
 
-from config import build_cors_origins, require_env
+from config import ALLOWED_ORIGINS, require_env
 from rate_limit import RateLimiterMiddleware
 from credit_proxy import proxy_request
 from ai_prompts import generate_escape_room_detailed
@@ -19,7 +19,6 @@ load_dotenv()
 require_env(["OPENROUTER_API_KEY", "SUPABASE_JWT_SECRET"])
 
 LAUNCHPAD_URL = os.getenv("LAUNCHPAD_URL", "http://launchpad-backend:8000")
-ALLOWED_ORIGINS = build_cors_origins()
 
 
 async def deduct_credits_via_launchpad(token: str, action: str, app: str = "escape-room", product: str = "escape-room-designer"):

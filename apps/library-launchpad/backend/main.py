@@ -7,14 +7,13 @@ import logging
 
 load_dotenv()
 
-from config import build_cors_origins, require_env
+from config import ALLOWED_ORIGINS, require_all
 from rate_limit import RateLimiterMiddleware
 from database import get_pool, close_pool
 
 logger = logging.getLogger("launchpad")
 
-require_env()
-ALLOWED_ORIGINS = build_cors_origins()
+require_all()
 
 from routes.generate import router as generate_router
 from routes.campaigns import router as campaigns_router
