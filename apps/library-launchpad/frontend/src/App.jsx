@@ -66,15 +66,29 @@ export default function App() {
 
   // Fetch credit balance when user logs in
   useEffect(() => {
-    if (user && !guestMode) {
-      apiCall('/credits/balance', {}, getToken)
-        .then(r => r.json())
-        .then(setCredits)
-        .catch(() => {})
-    } else {
-      setCredits(null)
+    const token = session?.access_token
+    // Only fetch if we have a token AND user is logged in AND not guest
+    if (user && !guestMode && token) {
+      console.log('App: Fetching credits with token...')
+      fetch(`${API}/credits/balance`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+        .then(async (r) => {
+          if (!r.ok) {
+            console.warn('App: Credits fetch failed:', r.status)
+            return null
+          }
+          return await r.json()
+        })
+        .then(data => {
+          if (data) {
+            console.log('App: Credits data', data)
+            setCredits(data)
+          }
+        })
+        .catch(e => console.error('App: Exception fetching credits:', e))
     }
-  }, [user, guestMode])
+  }, [user, guestMode, session])
 
   const fetchCredits = async () => {
     if (!user || guestMode) return
@@ -114,11 +128,16 @@ export default function App() {
         return
       }
       
+      if (!res.ok) {
+        console.error('Generation failed with status:', res.status)
+        return
+      }
+
       const data = await res.json()
       setCampaign(data)
       fetchCredits() // Refresh credit balance
     } catch (e) {
-      console.error('Generate failed:', e)
+      console.error('Generate crash:', e)
     } finally {
       setLoading(false)
     }
@@ -375,13 +394,13 @@ export default function App() {
             >
               {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
             </button>
-            {user && credits && (
+            {user && (
               <button
                 onClick={() => setShowCreditModal(true)}
                 className="flex items-center gap-2 px-3 py-1.5 text-sm bg-card border border-default rounded-lg transition-all duration-250 hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-solid)]"
               >
                 <Sparkles className="w-4 h-4 accent-solid" />
-                <span className="text-primary">{credits.total_available} credits</span>
+                <span className="text-primary">{credits?.total_available ?? '—'} credits</span>
               </button>
             )}
             {guestMode && (
