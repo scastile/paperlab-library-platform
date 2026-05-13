@@ -9,7 +9,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Add host key to known_hosts
-        run: ssh-keyscan -p 2222 -H 10.0.0.179 >> ~/.ssh/known_hosts
+        run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          ssh-keyscan -p 2222 -H 10.0.0.179 >> ~/.ssh/known_hosts
 
       - name: Deploy
         uses: appleboy/ssh-action@v1.0.3
