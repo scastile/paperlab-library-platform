@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { Loader2, BookOpen } from 'lucide-react'
+import { Loader2, BookOpen, Palette } from 'lucide-react'
 import ServiceCard from '../components/ServiceCard'
 import { Rocket, Puzzle } from 'lucide-react'
 import { buildProductUrl } from '../lib/auth-bridge'
@@ -26,7 +26,7 @@ const SERVICES = [
     tagClass: 'bg-emerald-500/10 text-emerald-500',
   },
   {
-    icon: 'Palette',
+    icon: Palette,
     title: 'Event Flyer Studio',
     description: 'AI-powered campaign generation, escape room design, and event flyers — built for how libraries actually work.',
     href: 'https://flyer.paperlab.xyz',
