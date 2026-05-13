@@ -24,7 +24,7 @@ services:
       context: ./apps/library-launchpad/frontend
       args:
         VITE_SUPABASE_URL: http://10.0.0.179:8001
-        VITE_SUPABASE_ANON_KEY: eyJhbG...-xCc
+        VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzc4Njg0NTU0LCJleHAiOjIwOTQwNDQ1NTQsImlzX2FkbWluIjpmYWxzZX0.OT6aSuWokf8DAIwlvsIJwRHFFbzUIMIPJ7ROHo5ZlOU
     ports:
       - "8200:80"
     extra_hosts:
@@ -60,7 +60,7 @@ services:
       context: ./apps/escape-room-designer/frontend
       args:
         VITE_SUPABASE_URL: http://10.0.0.179:8001
-        VITE_SUPABASE_ANON_KEY: eyJhbG...-xCc
+        VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzc4Njg0NTU0LCJleHAiOjIwOTQwNDQ1NTQsImlzX2FkbWluIjpmYWxzZX0.OT6aSuWokf8DAIwlvsIJwRHFFbzUIMIPJ7ROHo5ZlOU
     ports:
       - "8203:80"
     networks:
@@ -99,7 +99,7 @@ services:
       context: ./apps/event-flyer-studio/frontend
       args:
         VITE_SUPABASE_URL: http://10.0.0.179:8001
-        VITE_SUPABASE_ANON_KEY: eyJhbG...-xCc
+        VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzc4Njg0NTU0LCJleHAiOjIwOTQwNDQ1NTQsImlzX2FkbWluIjpmYWxzZX0.OT6aSuWokf8DAIwlvsIJwRHFFbzUIMIPJ7ROHo5ZlOU
     ports:
       - "8204:80"
     networks:
@@ -114,7 +114,7 @@ services:
       context: ./apps/libpaper-landing
       args:
         VITE_SUPABASE_URL: http://10.0.0.179:8001
-        VITE_SUPABASE_ANON_KEY: eyJhbG...-xCc
+        VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzc4Njg0NTU0LCJleHAiOjIwOTQwNDQ1NTQsImlzX2FkbWluIjpmYWxzZX0.OT6aSuWokf8DAIwlvsIJwRHFFbzUIMIPJ7ROHo5ZlOU
     ports:
       - "8202:80"
     networks:
@@ -152,7 +152,7 @@ services:
       context: ./apps/libbrain/frontend
       args:
         VITE_SUPABASE_URL: http://10.0.0.179:8001
-        VITE_SUPABASE_ANON_KEY: eyJhbG...-xCc
+        VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzc4Njg0NTU0LCJleHAiOjIwOTQwNDQ1NTQsImlzX2FkbWluIjpmYWxzZX0.OT6aSuWokf8DAIwlvsIJwRHFFbzUIMIPJ7ROHo5ZlOU
     ports:
       - "8205:80"
     networks:
