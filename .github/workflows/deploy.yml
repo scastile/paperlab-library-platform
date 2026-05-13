@@ -8,20 +8,8 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Add host key to known_hosts
+      - name: Trigger Deploy
         run: |
-          mkdir -p ~/.ssh && chmod 700 ~/.ssh
-          ssh-keyscan -p 2222 -H 10.0.0.179 >> ~/.ssh/known_hosts
-
-      - name: Deploy
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: 10.0.0.179
-          port: 2222
-          username: root
-          key: ${{ secrets.DEPLOY_SSH_KEY }}
-          script: |
-            cd /opt/projects/paperlab-library-platform
-            git pull origin main
-            docker compose build
-            docker compose up -d --remove-orphans
+          curl -X POST "https://deploy.paperlab.xyz/" \
+            -H "X-Deploy-Secret: ${{ secrets.DEPLOY_WEBHOOK_SECRET }}" \
+            -w "\nStatus: %{http_code}\n"
