@@ -52,6 +52,7 @@ function Login() {
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
+      <div className="page-gradient-bg"><div className="gradient-mesh" /></div>
       <div className="card-lift w-full max-w-md p-8">
         <div className="text-center mb-6">
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl tint-violet mb-4">
@@ -484,6 +485,7 @@ function AppContent() {
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
+        <div className="page-gradient-bg"><div className="gradient-mesh" /></div>
         <Loader2 className="w-8 h-8 animate-spin text-accent-solid" />
       </div>
     )
@@ -495,6 +497,7 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-page">
+      <div className="page-gradient-bg"><div className="gradient-mesh" /></div>
       <Header actions={
         <button onClick={() => setShowSaved(!showSaved)} className="btn-outline text-sm py-2 px-3">
           <FolderOpen className="w-4 h-4" />

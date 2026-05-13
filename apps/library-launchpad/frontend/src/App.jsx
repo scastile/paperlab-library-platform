@@ -335,6 +335,7 @@ export default function App() {
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-page">
+      <div className="page-gradient-bg"><div className="gradient-mesh" /></div>
         <div className="text-secondary" role="status" aria-live="polite">Loading…</div>
       </div>
     )
@@ -362,6 +363,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-page">
+      <div className="page-gradient-bg"><div className="gradient-mesh" /></div>
       {/* Header */}
       <header className="border-b border-default bg-card">
         <div className="max-w-7xl mx-auto px-4 md:px-8 h-16 flex items-center justify-between">
