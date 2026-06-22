@@ -10,7 +10,7 @@ if _app_dir not in sys.path:
 from _shared.config import build_cors_origins, require_env
 
 ALLOWED_ORIGINS = build_cors_origins("8200", ["https://launchpad.paperlab.xyz", "https://lib.paperlab.xyz"])
-REQUIRED = ["OPENROUTER_API_KEY", "SUPABASE_JWT_SECRET", "SUPABASE_URL", "STRIPE_SECRET_KEY"]
+REQUIRED = ["OPENROUTER_API_KEY", "STRIPE_SECRET_KEY"]
 
 
 def require_all():

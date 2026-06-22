@@ -6,4 +6,4 @@ python-dotenv==1.0.1
 pyjwt==2.12.1
 cryptography==46.0.7
 stripe
-asyncpg==0.30.0
+aiosqlite

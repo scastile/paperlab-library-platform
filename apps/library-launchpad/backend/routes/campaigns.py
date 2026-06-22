@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends
 from models import CampaignListItem, CardOut, MediaOut
-from database import get_pool
+from database import get_db
 from auth import get_current_user, optional_user
 import json
 
@@ -10,19 +10,19 @@ router = APIRouter()
 @router.get("/campaigns")
 async def list_campaigns(user_id: str = Depends(optional_user)):
     """List saved campaigns. Shows all if not authenticated, only own if authenticated."""
-    pool = await get_pool()
-    async with pool.acquire() as conn:
+    db = await get_db()
+    try:
         if user_id:
-            rows = await conn.fetch("""
+            cursor = await db.execute("""
                 SELECT c.id, c.topic, c.created_at, COUNT(cards.id) as card_count, c.target_audience, c.budget
                 FROM campaigns c
                 LEFT JOIN cards ON cards.campaign_id = c.id
-                WHERE c.user_id = $1
+                WHERE c.user_id = ?
                 GROUP BY c.id
                 ORDER BY c.created_at DESC
-            """, user_id)
+            """, (user_id,))
         else:
-            rows = await conn.fetch("""
+            cursor = await db.execute("""
                 SELECT c.id, c.topic, c.created_at, COUNT(cards.id) as card_count, c.target_audience, c.budget
                 FROM campaigns c
                 LEFT JOIN cards ON cards.campaign_id = c.id
@@ -30,6 +30,7 @@ async def list_campaigns(user_id: str = Depends(optional_user)):
                 GROUP BY c.id
                 ORDER BY c.created_at DESC
             """)
+        rows = await cursor.fetchall()
         return [
             CampaignListItem(
                 id=r["id"], topic=r["topic"], created_at=r["created_at"], card_count=r["card_count"],
@@ -37,42 +38,49 @@ async def list_campaigns(user_id: str = Depends(optional_user)):
             )
             for r in rows
         ]
+    finally:
+        await db.close()
 
 
 @router.get("/campaigns/{campaign_id}")
 async def get_campaign(campaign_id: int, user_id: str = Depends(optional_user)):
     """Load a saved campaign with all its cards and media."""
-    pool = await get_pool()
-    async with pool.acquire() as conn:
+    db = await get_db()
+    try:
         if user_id:
-            row = await conn.fetchrow(
-                "SELECT id, topic, image_url, created_at, target_audience, budget FROM campaigns WHERE id = $1 AND user_id = $2",
-                campaign_id, user_id,
+            cursor = await db.execute(
+                "SELECT id, topic, image_url, created_at, target_audience, budget FROM campaigns WHERE id = ? AND user_id = ?",
+                (campaign_id, user_id),
             )
         else:
-            row = await conn.fetchrow(
-                "SELECT id, topic, image_url, created_at, target_audience, budget FROM campaigns WHERE id = $1 AND user_id = 'anonymous'",
-                campaign_id,
+            cursor = await db.execute(
+                "SELECT id, topic, image_url, created_at, target_audience, budget FROM campaigns WHERE id = ? AND user_id = 'anonymous'",
+                (campaign_id,),
             )
+        row = await cursor.fetchone()
         if not row:
             raise HTTPException(404, "Campaign not found")
 
-        media_rows = await conn.fetch(
-            "SELECT id, title, author, media_type, cover_url, openlibrary_key FROM media_results WHERE campaign_id = $1",
-            campaign_id,
+        cursor = await db.execute(
+            "SELECT id, title, author, media_type, cover_url, openlibrary_key FROM media_results WHERE campaign_id = ?",
+            (campaign_id,),
         )
+        media_rows = await cursor.fetchall()
         media = [MediaOut(id=r["id"], title=r["title"], author=r["author"], media_type=r["media_type"], cover_url=r["cover_url"], openlibrary_key=r["openlibrary_key"]) for r in media_rows]
 
-        card_rows = await conn.fetch(
-            "SELECT id, card_type, content, pinned, position FROM cards WHERE campaign_id = $1 ORDER BY position",
-            campaign_id,
+        cursor = await db.execute(
+            "SELECT id, card_type, content, pinned, position FROM cards WHERE campaign_id = ? ORDER BY position",
+            (campaign_id,),
         )
+        card_rows = await cursor.fetchall()
         cards = [CardOut(id=r["id"], card_type=r["card_type"], content=json.loads(r["content"]), pinned=bool(r["pinned"]), position=r["position"]) for r in card_rows]
 
-        dates = await conn.fetch("SELECT date, reason FROM relevant_dates WHERE campaign_id = $1", campaign_id)
+        cursor = await db.execute("SELECT date, reason FROM relevant_dates WHERE campaign_id = ?", (campaign_id,))
+        dates = await cursor.fetchall()
         relevant_dates = [{"date": r["date"], "reason": r["reason"]} for r in dates]
 
-        cm = await conn.fetch("SELECT title, year, author, connection, cover_url, openlibrary_key FROM cross_media_connections WHERE campaign_id = $1", campaign_id)
+        cursor = await db.execute("SELECT title, year, author, connection, cover_url, openlibrary_key FROM cross_media_connections WHERE campaign_id = ?", (campaign_id,))
+        cm = await cursor.fetchall()
         cross_media = [{"title": r["title"], "year": r["year"], "author": r["author"], "connection": r["connection"], "cover_url": r["cover_url"], "openlibrary_key": r["openlibrary_key"]} for r in cm]
 
         return {
@@ -82,32 +90,38 @@ async def get_campaign(campaign_id: int, user_id: str = Depends(optional_user)):
             "media": media, "cards": cards, "relevant_dates": relevant_dates,
             "cross_media_connections": cross_media,
         }
+    finally:
+        await db.close()
 
 
 @router.delete("/campaigns/{campaign_id}")
 async def delete_campaign(campaign_id: int, user_id: str = Depends(optional_user)):
-    """Delete a campaign and all related data. PostgreSQL FK cascade handles cleanup."""
-    pool = await get_pool()
-    async with pool.acquire() as conn:
+    """Delete a campaign and all related data. SQLite FK cascade handles cleanup."""
+    db = await get_db()
+    try:
         if user_id:
-            row = await conn.fetchrow(
-                "SELECT id FROM campaigns WHERE id = $1 AND user_id = $2",
-                campaign_id, user_id,
+            cursor = await db.execute(
+                "SELECT id FROM campaigns WHERE id = ? AND user_id = ?",
+                (campaign_id, user_id),
             )
         else:
-            row = await conn.fetchrow(
-                "SELECT id FROM campaigns WHERE id = $1 AND user_id = 'anonymous'",
-                campaign_id,
+            cursor = await db.execute(
+                "SELECT id FROM campaigns WHERE id = ? AND user_id = 'anonymous'",
+                (campaign_id,),
             )
+        row = await cursor.fetchone()
         if not row:
             raise HTTPException(404, "Campaign not found")
 
-        # PostgreSQL FK CASCADE handles everything, but keep explicit deletes for safety
-        await conn.execute("DELETE FROM escape_plans WHERE campaign_id = $1", campaign_id)
-        await conn.execute("DELETE FROM cards WHERE campaign_id = $1", campaign_id)
-        await conn.execute("DELETE FROM media_results WHERE campaign_id = $1", campaign_id)
-        await conn.execute("DELETE FROM relevant_dates WHERE campaign_id = $1", campaign_id)
-        await conn.execute("DELETE FROM cross_media_connections WHERE campaign_id = $1", campaign_id)
-        await conn.execute("DELETE FROM campaigns WHERE id = $1", campaign_id)
+        # SQLite FK CASCADE handles everything, but keep explicit deletes for safety
+        await db.execute("DELETE FROM escape_plans WHERE campaign_id = ?", (campaign_id,))
+        await db.execute("DELETE FROM cards WHERE campaign_id = ?", (campaign_id,))
+        await db.execute("DELETE FROM media_results WHERE campaign_id = ?", (campaign_id,))
+        await db.execute("DELETE FROM relevant_dates WHERE campaign_id = ?", (campaign_id,))
+        await db.execute("DELETE FROM cross_media_connections WHERE campaign_id = ?", (campaign_id,))
+        await db.execute("DELETE FROM campaigns WHERE id = ?", (campaign_id,))
+        await db.commit()
 
         return {"deleted": campaign_id}
+    finally:
+        await db.close()

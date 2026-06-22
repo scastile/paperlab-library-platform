@@ -8,7 +8,7 @@ import WelcomeModal from './components/WelcomeModal'
 import Login from './components/Login'
 import GenerationStatus from './components/GenerationStatus'
 import { useAuth } from './context/AuthContext'
-import { LogOut, Lock, Sparkles, CreditCard, Trash2, Sun, Moon, ChevronDown, ChevronRight, Rocket, Puzzle, Palette } from 'lucide-react'
+import { LogOut, Lock, Sparkles, CreditCard, Trash2, Sun, Moon, ChevronDown, ChevronRight } from 'lucide-react'
 import { getRandomExample } from './data/exampleCampaigns'
 import { featuredCampaigns } from './data/exampleCampaigns'
 import Footer from './components/Footer'
@@ -24,7 +24,7 @@ async function apiCall(path, options = {}, getToken) {
 }
 
 export default function App() {
-  const { user, session, loading: authLoading, getToken, signOut } = useAuth()
+  const { user, loading: authLoading, getToken, signOut } = useAuth()
   const [guestMode, setGuestMode] = useState(false)
   const [campaign, setCampaign] = useState(null)
   const [loading, setLoading] = useState(false)
@@ -66,29 +66,15 @@ export default function App() {
 
   // Fetch credit balance when user logs in
   useEffect(() => {
-    const token = session?.access_token
-    // Only fetch if we have a token AND user is logged in AND not guest
-    if (user && !guestMode && token) {
-      console.log('App: Fetching credits with token...')
-      fetch(`${API}/credits/balance`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      })
-        .then(async (r) => {
-          if (!r.ok) {
-            console.warn('App: Credits fetch failed:', r.status)
-            return null
-          }
-          return await r.json()
-        })
-        .then(data => {
-          if (data) {
-            console.log('App: Credits data', data)
-            setCredits(data)
-          }
-        })
-        .catch(e => console.error('App: Exception fetching credits:', e))
+    if (user && !guestMode) {
+      apiCall('/credits/balance', {}, getToken)
+        .then(r => r.json())
+        .then(setCredits)
+        .catch(() => {})
+    } else {
+      setCredits(null)
     }
-  }, [user, guestMode, session])
+  }, [user, guestMode])
 
   const fetchCredits = async () => {
     if (!user || guestMode) return
@@ -128,16 +114,11 @@ export default function App() {
         return
       }
       
-      if (!res.ok) {
-        console.error('Generation failed with status:', res.status)
-        return
-      }
-
       const data = await res.json()
       setCampaign(data)
       fetchCredits() // Refresh credit balance
     } catch (e) {
-      console.error('Generate crash:', e)
+      console.error('Generate failed:', e)
     } finally {
       setLoading(false)
     }
@@ -335,110 +316,82 @@ export default function App() {
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-page">
-      <div className="page-gradient-bg"><div className="gradient-mesh" /></div>
         <div className="text-secondary" role="status" aria-live="polite">Loading…</div>
       </div>
     )
   }
 
-  // Show login if Supabase is configured and user is not signed in (unless guest mode)
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-  if (supabaseUrl && !user && !guestMode) {
+  // Show login if PocketBase is configured and user is not signed in (unless guest mode)
+  const pocketbaseUrl = import.meta.env.VITE_POCKETBASE_URL
+  if (pocketbaseUrl && !user && !guestMode) {
     return <Login onSkip={() => {
       setGuestMode(true)
       setShowWelcomeModal(true)
     }} />
   }
 
-  const productUrl = (url) => {
-    if (!session?.access_token) return url
-    return `${url}/#access_token=${session.access_token}&refresh_token=${session.refresh_token}`
-  }
-
-  const SERVICES = [
-    { icon: Rocket, label: 'Launchpad', href: 'https://launchpad.paperlab.xyz', tint: 'tint-indigo', color: '#6366f1', active: true },
-    { icon: Puzzle, label: 'Escape Room', href: 'https://escape.paperlab.xyz', tint: 'tint-violet', color: '#8b5cf6' },
-    { icon: Palette, label: 'Flyer Studio', href: 'https://flyer.paperlab.xyz', tint: 'tint-rose', color: '#f43f5e' },
-  ]
-
   return (
-    <div className="min-h-screen bg-page">
-      <div className="page-gradient-bg"><div className="gradient-mesh" /></div>
+    <>
+    <div className="min-h-screen bg-page px-4 py-8 md:px-8 md:py-12 max-w-7xl mx-auto">
       {/* Header */}
-      <header className="border-b border-default bg-card">
-        <div className="max-w-7xl mx-auto px-4 md:px-8 h-16 flex items-center justify-between">
-          <a href={productUrl('https://lib.paperlab.xyz')} className="flex items-center gap-2.5 text-primary font-bold text-lg no-underline">
-            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{color:'var(--accent-solid)'}}><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
-            <span>PaperLab</span>
-          </a>
-          <nav className="hidden md:flex items-center gap-1">
-            {SERVICES.map((s) => {
-              const Icon = s.icon
-              return (
-                <a key={s.label} href={s.soon ? undefined : productUrl(s.href)}
-                  onClick={s.soon ? (e) => e.preventDefault() : undefined}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 no-underline ${s.soon ? 'opacity-40 cursor-not-allowed text-secondary' : s.active ? 'bg-hover text-primary' : 'text-secondary hover:text-primary hover:bg-hover'}`}
-                  title={s.soon ? `${s.label} — Coming Soon` : s.label}>
-                  <span className={`w-7 h-7 rounded-md flex items-center justify-center ${s.tint}`}>
-                    <Icon className="w-4 h-4" style={{ color: s.color }} />
-                  </span>
-                  <span className="hidden lg:inline">{s.label}</span>
-                  {s.soon && <span className="text-[10px] text-tertiary ml-0.5">soon</span>}
-                </a>
-              )
-            })}
-          </nav>
+      <header className="mb-10">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 gap-3">
           <div className="flex items-center gap-3">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-primary tracking-tight">
+              Turn Any Topic Into a <span style={{background: 'var(--accent-gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'}}>Library Event</span>
+            </h1>
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
             <button
               onClick={toggleTheme}
               aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-              className="p-2 text-secondary hover:text-primary hover:bg-hover rounded-lg transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-solid)]"
+              className="p-2 text-secondary hover:text-primary hover:bg-hover rounded-lg transition-all duration-250 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-solid)]"
             >
               {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
             </button>
-            {user && (
-              <button
-                onClick={() => setShowCreditModal(true)}
-                className="flex items-center gap-2 px-3 py-1.5 text-sm bg-card border border-default rounded-lg transition-all duration-250 hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-solid)]"
-              >
-                <Sparkles className="w-4 h-4 accent-solid" />
-                <span className="text-primary">{credits?.total_available ?? '—'} credits</span>
-              </button>
-            )}
-            {guestMode && (
-              <button
-                onClick={() => setGuestMode(false)}
-                className="btn-gradient flex items-center gap-2 px-4 py-2 text-sm rounded-lg font-medium"
-              >
-                <Lock className="w-4 h-4" />
-                Sign Up
-              </button>
-            )}
-            {user && (
+          {user && (
+            <>
+              {credits && (
+                <button
+                  onClick={() => setShowCreditModal(true)}
+                  className="flex items-center gap-2 px-3 py-1.5 text-sm bg-card border border-default rounded-lg transition-all duration-250 hover:bg-hover"
+                >
+                  <Sparkles className="w-4 h-4 accent-solid" />
+                  <span className="text-primary">{credits.total_available || 0} credits</span>
+                </button>
+              )}
               <button
                 onClick={signOut}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-secondary hover:text-primary hover:bg-hover transition-all duration-200"
+                className="flex items-center gap-2 px-3 py-1.5 text-sm text-secondary hover:text-primary hover:bg-hover rounded-lg transition-all duration-250"
               >
                 <LogOut className="w-4 h-4" />
-                <span className="hidden sm:inline">Sign Out</span>
+                Sign Out
               </button>
-            )}
+            </>
+          )}
+          {guestMode && (
+            <button
+              onClick={() => setGuestMode(false)}
+              className="btn-gradient flex items-center gap-2 px-4 py-2 text-sm rounded-lg font-medium"
+            >
+              <Lock className="w-4 h-4" />
+              Sign Up for AI Generation
+            </button>
+          )}
           </div>
         </div>
-      </header>
-
-      <div className="max-w-7xl mx-auto px-4 md:px-8 py-8 md:py-12">
-        <div className="mb-10 text-center">
-          <p className="text-secondary max-w-2xl mx-auto">
-            Transform your library's engagement with AI-powered promotional campaigns.
-            Generate innovative cross-promotion ideas for books, movies, games, and events.
-          </p>
-          <div className="mt-4 text-sm flex justify-center gap-6 flex-wrap">
+        <p className="text-secondary max-w-2xl">
+          Transform your library's engagement with AI-powered promotional campaigns.
+          Generate innovative cross-promotion ideas for books, movies, games, and events.
+        </p>
+        <div className="mt-4 text-sm">
+          <div className="flex gap-6 flex-wrap">
             <span className="accent-solid font-semibold">25,000+ Ideas Generated</span>
             <span className="accent-solid font-semibold">450+ Libraries Using</span>
             <span className="accent-solid font-semibold">98% Satisfaction</span>
           </div>
         </div>
+      </header>
 
       {guestMode && (
         <div className="mb-8 p-5 bg-card border border-default rounded-xl flex items-center justify-between gap-4 flex-wrap" style={{boxShadow: 'var(--shadow-sm)'}}>
@@ -697,11 +650,11 @@ export default function App() {
         />
       )}
 
-      </div>
-
-      {/* Footer — outside main container to match card edges */}
-      <Footer />
     </div>
+
+    {/* Footer — outside main container to match card edges */}
+    <Footer />
+    </>
   )
 }
 

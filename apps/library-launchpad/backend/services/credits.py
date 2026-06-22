@@ -1,7 +1,6 @@
-"""Credit system — Supabase PostgreSQL backend."""
-from database import get_pool
+"""Credit system — SQLite (aiosqlite) backend."""
+from database import get_db
 from datetime import date
-import json
 import logging
 
 logger = logging.getLogger("launchpad")
@@ -26,37 +25,44 @@ PRO_FREE_ESCAPE_ROOMS = 5
 
 
 async def get_or_create_user(user_id: str) -> dict:
-    pool = await get_pool()
-    async with pool.acquire() as conn:
-        row = await conn.fetchrow("SELECT * FROM users WHERE id = $1", user_id)
+    db = await get_db()
+    try:
+        cursor = await db.execute("SELECT * FROM users WHERE id = ?", (user_id,))
+        row = await cursor.fetchone()
         if row:
             return dict(row)
 
-        await conn.execute(
+        await db.execute(
             """INSERT INTO users (id, credits, has_received_free_credits,
                last_credit_reset, escape_rooms_used_monthly)
-               VALUES ($1, 10, 1, $2, 0)""",
-            user_id, date.today().isoformat(),
+               VALUES (?, 10, 1, ?, 0)""",
+            (user_id, date.today().isoformat()),
         )
-        row = await conn.fetchrow("SELECT * FROM users WHERE id = $1", user_id)
+        await db.commit()
+        cursor = await db.execute("SELECT * FROM users WHERE id = ?", (user_id,))
+        row = await cursor.fetchone()
         return dict(row)
+    finally:
+        await db.close()
 
 
 async def get_credit_balance(user_id: str) -> dict:
     user = await get_or_create_user(user_id)
     await ensure_monthly_reset(user_id)
 
-    pool = await get_pool()
-    async with pool.acquire() as conn:
-        row = await conn.fetchrow("SELECT * FROM users WHERE id = $1", user_id)
+    db = await get_db()
+    try:
+        cursor = await db.execute("SELECT * FROM users WHERE id = ?", (user_id,))
+        row = await cursor.fetchone()
         user = dict(row) if row else await get_or_create_user(user_id)
 
-        pack_row = await conn.fetchrow(
+        cursor = await db.execute(
             """SELECT COALESCE(SUM(credits_remaining), 0) AS pack_credits
-               FROM credit_packs WHERE user_id = $1 AND status = 'active'
-               AND (expires_at IS NULL OR expires_at > now())""",
-            user_id,
+               FROM credit_packs WHERE user_id = ? AND status = 'active'
+               AND (expires_at IS NULL OR expires_at > ?)""",
+            (user_id, date.today().isoformat()),
         )
+        pack_row = await cursor.fetchone()
         pack_credits = pack_row["pack_credits"]
 
         tier = user["subscription_tier"]
@@ -82,15 +88,18 @@ async def get_credit_balance(user_id: str) -> dict:
             "escape_rooms_free_remaining": er_free_rem,
             "escape_rooms_free_total": PRO_FREE_ESCAPE_ROOMS if tier == "pro" else 0,
         }
+    finally:
+        await db.close()
 
 
 async def ensure_monthly_reset(user_id: str):
-    pool = await get_pool()
-    async with pool.acquire() as conn:
-        row = await conn.fetchrow(
-            "SELECT last_credit_reset, subscription_tier FROM users WHERE id = $1",
-            user_id,
+    db = await get_db()
+    try:
+        cursor = await db.execute(
+            "SELECT last_credit_reset, subscription_tier FROM users WHERE id = ?",
+            (user_id,),
         )
+        row = await cursor.fetchone()
         if not row:
             return
         last_reset = row["last_credit_reset"]
@@ -101,24 +110,28 @@ async def ensure_monthly_reset(user_id: str):
         today = date.today()
         if lr.month != today.month or lr.year != today.year:
             if tier in ("pro", "institution"):
-                row2 = await conn.fetchrow(
-                    "SELECT credits_used_this_month FROM users WHERE id = $1", user_id
+                cursor = await db.execute(
+                    "SELECT credits_used_this_month FROM users WHERE id = ?",
+                    (user_id,),
                 )
+                row2 = await cursor.fetchone()
                 old_used = row2["credits_used_this_month"] or 0
                 alloc = TIER_MONTHLY_CREDITS.get(tier, 0)
                 rollover = min(max(0, alloc - old_used), alloc * PRO_ROLLOVER_CAP_MONTHS)
-                await conn.execute(
-                    """UPDATE users SET credits_used_this_month = $1,
-                       escape_rooms_used_monthly = 0, last_credit_reset = $2 WHERE id = $3""",
-                    -rollover, today.isoformat(), user_id,
+                await db.execute(
+                    """UPDATE users SET credits_used_this_month = ?,
+                       escape_rooms_used_monthly = 0, last_credit_reset = ? WHERE id = ?""",
+                    (-rollover, today.isoformat(), user_id),
                 )
             else:
-                await conn.execute(
+                await db.execute(
                     """UPDATE users SET credits_used_this_month = 0,
-                       escape_rooms_used_monthly = 0, last_credit_reset = $1 WHERE id = $2""",
-                    today.isoformat(), user_id,
+                       escape_rooms_used_monthly = 0, last_credit_reset = ? WHERE id = ?""",
+                    (today.isoformat(), user_id),
                 )
-            await conn.execute("")  # commit via acquire context
+            await db.commit()
+    finally:
+        await db.close()
 
 
 async def can_use_action(user_id, action, cost_override=None, app="launchpad", product="launchpad"):
@@ -140,108 +153,133 @@ async def deduct_credits(user_id, action, campaign_id=None, cost_override=None, 
 
     balance = await get_credit_balance(user_id)
     if action in ("escape_plan", "escape_room_generate") and balance["tier"] == "pro" and balance["escape_rooms_free_remaining"] > 0:
-        pool = await get_pool()
-        async with pool.acquire() as conn:
-            async with conn.transaction():
-                r = await conn.execute(
-                    """UPDATE users SET escape_rooms_used_monthly = escape_rooms_used_monthly + 1
-                       WHERE id = $1 AND escape_rooms_used_monthly < $2""",
-                    user_id, PRO_FREE_ESCAPE_ROOMS,
-                )
-                if r == "UPDATE 0":
-                    return False, "Pro escape room limit reached"
-                await log_usage(user_id, action, 0, campaign_id, app, product)
+        db = await get_db()
+        try:
+            await db.execute("BEGIN")
+            cursor = await db.execute(
+                """UPDATE users SET escape_rooms_used_monthly = escape_rooms_used_monthly + 1
+                   WHERE id = ? AND escape_rooms_used_monthly < ?""",
+                (user_id, PRO_FREE_ESCAPE_ROOMS),
+            )
+            if cursor.rowcount == 0:
+                await db.rollback()
+                return False, "Pro escape room limit reached"
+            await log_usage(user_id, action, 0, campaign_id, app, product)
+            await db.commit()
             return True, ""
+        finally:
+            await db.close()
 
     cost = cost_override if cost_override is not None else CREDIT_COSTS[action]
-    pool = await get_pool()
-    async with pool.acquire() as conn:
-        async with conn.transaction():
-            user_row = await conn.fetchrow("SELECT * FROM users WHERE id = $1", user_id)
-            if not user_row:
-                return False, "User not found"
-            user = dict(user_row)
-            tier = user["subscription_tier"]
-            monthly_allocation = TIER_MONTHLY_CREDITS.get(tier, 0)
-            monthly_used = user.get("credits_used_this_month") or 0
-            monthly_remaining = max(0, monthly_allocation - monthly_used)
+    db = await get_db()
+    try:
+        await db.execute("BEGIN")
+        cursor = await db.execute("SELECT * FROM users WHERE id = ?", (user_id,))
+        user_row = await cursor.fetchone()
+        if not user_row:
+            await db.rollback()
+            return False, "User not found"
+        user = dict(user_row)
+        tier = user["subscription_tier"]
+        monthly_allocation = TIER_MONTHLY_CREDITS.get(tier, 0)
+        monthly_used = user.get("credits_used_this_month") or 0
+        monthly_remaining = max(0, monthly_allocation - monthly_used)
 
-            pack_row = await conn.fetchrow(
-                """SELECT COALESCE(SUM(credits_remaining), 0) AS pack_credits
-                   FROM credit_packs WHERE user_id = $1 AND status = 'active'""",
-                user_id,
+        cursor = await db.execute(
+            """SELECT COALESCE(SUM(credits_remaining), 0) AS pack_credits
+               FROM credit_packs WHERE user_id = ? AND status = 'active'""",
+            (user_id,),
+        )
+        pack_row = await cursor.fetchone()
+        pack_credits = pack_row["pack_credits"]
+        total_available = pack_credits + monthly_remaining + (user.get("credits") or 0)
+        if total_available < cost:
+            await db.rollback()
+            return False, f"Insufficient credits (need {cost}, have {total_available})"
+
+        remaining_cost = cost
+        free_credits = user.get("credits") or 0
+        if free_credits > 0:
+            u = min(free_credits, remaining_cost)
+            await db.execute("UPDATE users SET credits = credits - ? WHERE id = ?", (u, user_id))
+            remaining_cost -= u
+
+        if monthly_remaining > 0:
+            u = min(monthly_remaining, remaining_cost)
+            await db.execute(
+                "UPDATE users SET credits_used_this_month = credits_used_this_month + ? WHERE id = ?",
+                (u, user_id),
             )
-            pack_credits = pack_row["pack_credits"]
-            total_available = pack_credits + monthly_remaining + (user.get("credits") or 0)
-            if total_available < cost:
-                return False, f"Insufficient credits (need {cost}, have {total_available})"
+            remaining_cost -= u
 
-            remaining_cost = cost
-            free_credits = user.get("credits") or 0
-            if free_credits > 0:
-                u = min(free_credits, remaining_cost)
-                await conn.execute("UPDATE users SET credits = credits - $1 WHERE id = $2", u, user_id)
-                remaining_cost -= u
-
-            if monthly_remaining > 0:
-                u = min(monthly_remaining, remaining_cost)
-                await conn.execute(
-                    "UPDATE users SET credits_used_this_month = credits_used_this_month + $1 WHERE id = $2",
-                    u, user_id,
+        if remaining_cost > 0 and pack_credits > 0:
+            cursor = await db.execute(
+                """SELECT id, credits_remaining FROM credit_packs
+                   WHERE user_id = ? AND status = 'active' AND credits_remaining > 0
+                   ORDER BY created_at ASC""",
+                (user_id,),
+            )
+            packs = await cursor.fetchall()
+            for pack in packs:
+                if remaining_cost <= 0:
+                    break
+                u = min(pack["credits_remaining"], remaining_cost)
+                await db.execute(
+                    "UPDATE credit_packs SET credits_remaining = credits_remaining - ? WHERE id = ?",
+                    (u, pack["id"]),
                 )
                 remaining_cost -= u
-
-            if remaining_cost > 0 and pack_credits > 0:
-                packs = await conn.fetch(
-                    """SELECT id, credits_remaining FROM credit_packs
-                       WHERE user_id = $1 AND status = 'active' AND credits_remaining > 0
-                       ORDER BY created_at ASC""",
-                    user_id,
-                )
-                for pack in packs:
-                    if remaining_cost <= 0:
-                        break
-                    u = min(pack["credits_remaining"], remaining_cost)
-                    await conn.execute(
-                        "UPDATE credit_packs SET credits_remaining = credits_remaining - $1 WHERE id = $2",
-                        u, pack["id"],
-                    )
-                    remaining_cost -= u
-                await conn.execute(
-                    "UPDATE credit_packs SET status = 'consumed' WHERE user_id = $1 AND credits_remaining <= 0 AND status = 'active'",
-                    user_id,
-                )
-            await log_usage(user_id, action, cost, campaign_id, app, product)
+            await db.execute(
+                "UPDATE credit_packs SET status = 'consumed' WHERE user_id = ? AND credits_remaining <= 0 AND status = 'active'",
+                (user_id,),
+            )
+        await log_usage(user_id, action, cost, campaign_id, app, product)
+        await db.commit()
         return True, ""
+    except Exception:
+        await db.rollback()
+        raise
+    finally:
+        await db.close()
 
 
 async def log_usage(user_id, action_type, credits_spent, campaign_id=None, app="launchpad", product="launchpad"):
-    pool = await get_pool()
-    async with pool.acquire() as conn:
-        await conn.execute(
+    db = await get_db()
+    try:
+        await db.execute(
             """INSERT INTO credit_usage_log (user_id, action_type, credits_spent,
-               campaign_id, app, product) VALUES ($1, $2, $3, $4, $5, $6)""",
-            user_id, action_type, credits_spent, campaign_id, app, product,
+               campaign_id, app, product) VALUES (?, ?, ?, ?, ?, ?)""",
+            (user_id, action_type, credits_spent, campaign_id, app, product),
         )
+        await db.commit()
+    finally:
+        await db.close()
 
 
 async def add_credits_to_user(user_id, credits, purchase_type="pack"):
     from datetime import timedelta
-    pool = await get_pool()
-    async with pool.acquire() as conn:
+    db = await get_db()
+    try:
         expires_at = date.today() + timedelta(days=PACK_EXPIRATION_DAYS)
-        await conn.execute(
+        await db.execute(
             """INSERT INTO credit_packs (user_id, credits_purchased, credits_remaining,
-               purchase_type, status, expires_at) VALUES ($1, $2, $3, $4, 'active', $5)""",
-            user_id, credits, credits, purchase_type, expires_at.isoformat(),
+               purchase_type, status, expires_at) VALUES (?, ?, ?, ?, 'active', ?)""",
+            (user_id, credits, credits, purchase_type, expires_at.isoformat()),
         )
+        await db.commit()
+    finally:
+        await db.close()
 
 
 async def set_user_subscription(user_id, tier, stripe_subscription_id=None, stripe_price_id=None):
-    pool = await get_pool()
-    async with pool.acquire() as conn:
-        await conn.execute(
-            """UPDATE users SET subscription_tier = $1, stripe_subscription_id = $2,
-               stripe_price_id = $3, updated_at = now() WHERE id = $4""",
-            tier, stripe_subscription_id, stripe_price_id, user_id,
+    db = await get_db()
+    try:
+        await db.execute(
+            """UPDATE users SET subscription_tier = ?, stripe_subscription_id = ?,
+               stripe_price_id = ?, updated_at = ? WHERE id = ?""",
+            (tier, stripe_subscription_id, stripe_price_id,
+             date.today().isoformat(), user_id),
         )
+        await db.commit()
+    finally:
+        await db.close()

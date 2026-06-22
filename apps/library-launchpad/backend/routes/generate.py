@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends
 from models import GenerateRequest, RerollRequest, CardOut, MediaOut, SaveRequest
-from database import get_pool
+from database import get_db
 from services.openlibrary import search_media, search_openlibrary
 from services.ai_prompts import generate_cards, reroll_card
 from services.credits import can_use_action, deduct_credits, get_or_create_user
@@ -130,62 +130,70 @@ async def save_campaign(payload: SaveRequest, user_id: str = Depends(get_current
     if len(cards) > 50:
         raise HTTPException(400, "Too many cards (max 50)")
 
-    pool = await get_pool()
-    async with pool.acquire() as conn:
-        async with conn.transaction():
-            campaign_row = await conn.fetchrow(
-                "INSERT INTO campaigns (user_id, topic, target_audience, budget) VALUES ($1, $2, $3, $4) RETURNING id",
-                user_id, topic, target_audience, budget,
+    db = await get_db()
+    try:
+        await db.execute("BEGIN")
+        cursor = await db.execute(
+            "INSERT INTO campaigns (user_id, topic, target_audience, budget) VALUES (?, ?, ?, ?)",
+            (user_id, topic, target_audience, budget),
+        )
+        campaign_id = cursor.lastrowid
+
+        for m in media[:50]:
+            await db.execute(
+                """INSERT INTO media_results (campaign_id, title, author, media_type, cover_url, openlibrary_key)
+                   VALUES (?, ?, ?, ?, ?, ?)""",
+                (campaign_id, (m.get("title") or "")[:500], (m.get("author") or "")[:200],
+                 (m.get("media_type") or "")[:50], (m.get("cover_url") or "")[:500], (m.get("openlibrary_key") or "")[:100]),
             )
-            campaign_id = campaign_row["id"]
 
-            for m in media[:50]:
-                await conn.execute(
-                    """INSERT INTO media_results (campaign_id, title, author, media_type, cover_url, openlibrary_key)
-                       VALUES ($1, $2, $3, $4, $5, $6)""",
-                    campaign_id, (m.get("title") or "")[:500], (m.get("author") or "")[:200],
-                    (m.get("media_type") or "")[:50], (m.get("cover_url") or "")[:500], (m.get("openlibrary_key") or "")[:100],
-                )
-
-            for i, card in enumerate(cards[:50]):
-                await conn.execute(
-                    """INSERT INTO cards (campaign_id, card_type, content, pinned, position)
-                       VALUES ($1, $2, $3, $4, $5)""",
-                    campaign_id, (card.get("card_type") or "")[:50],
-                    json.dumps(card.get("content", {})), 1 if card.get("pinned") else 0, i,
-                )
-
-            for d in relevant_dates[:50]:
-                await conn.execute(
-                    "INSERT INTO relevant_dates (campaign_id, date, reason) VALUES ($1, $2, $3)",
-                    campaign_id, (d.get("date") or "")[:50], (d.get("reason") or "")[:500],
-                )
-
-            for c in cross_media[:50]:
-                await conn.execute(
-                    """INSERT INTO cross_media_connections (campaign_id, title, year, author, connection, cover_url, openlibrary_key)
-                       VALUES ($1, $2, $3, $4, $5, $6, $7)""",
-                    campaign_id, (c.get("title") or "")[:500], c.get("year"), (c.get("author") or "")[:200],
-                    (c.get("connection") or "")[:500], (c.get("cover_url") or "")[:500], (c.get("openlibrary_key") or "")[:100],
-                )
-
-            saved_cards = []
-            rows = await conn.fetch(
-                "SELECT id, card_type, content, pinned, position FROM cards WHERE campaign_id = $1 ORDER BY position",
-                campaign_id,
+        for i, card in enumerate(cards[:50]):
+            await db.execute(
+                """INSERT INTO cards (campaign_id, card_type, content, pinned, position)
+                   VALUES (?, ?, ?, ?, ?)""",
+                (campaign_id, (card.get("card_type") or "")[:50],
+                 json.dumps(card.get("content", {})), 1 if card.get("pinned") else 0, i),
             )
-            for row in rows:
-                saved_cards.append({
-                    "id": row["id"], "card_type": row["card_type"], "content": json.loads(row["content"]),
-                    "pinned": bool(row["pinned"]), "position": row["position"],
-                })
 
-            return {
-                "campaign_id": campaign_id, "topic": topic, "media": media,
-                "cards": saved_cards, "relevant_dates": relevant_dates,
-                "cross_media_connections": cross_media,
-                "target_audience": target_audience, "budget": budget, "saved": True,
-            }
+        for d in relevant_dates[:50]:
+            await db.execute(
+                "INSERT INTO relevant_dates (campaign_id, date, reason) VALUES (?, ?, ?)",
+                (campaign_id, (d.get("date") or "")[:50], (d.get("reason") or "")[:500]),
+            )
+
+        for c in cross_media[:50]:
+            await db.execute(
+                """INSERT INTO cross_media_connections (campaign_id, title, year, author, connection, cover_url, openlibrary_key)
+                   VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                (campaign_id, (c.get("title") or "")[:500], c.get("year"), (c.get("author") or "")[:200],
+                 (c.get("connection") or "")[:500], (c.get("cover_url") or "")[:500], (c.get("openlibrary_key") or "")[:100]),
+            )
+
+        saved_cards = []
+        cursor = await db.execute(
+            "SELECT id, card_type, content, pinned, position FROM cards WHERE campaign_id = ? ORDER BY position",
+            (campaign_id,),
+        )
+        rows = await cursor.fetchall()
+        for row in rows:
+            saved_cards.append({
+                "id": row["id"], "card_type": row["card_type"], "content": json.loads(row["content"]),
+                "pinned": bool(row["pinned"]), "position": row["position"],
+            })
+
+        await db.commit()
+
+        return {
+            "campaign_id": campaign_id, "topic": topic, "media": media,
+            "cards": saved_cards, "relevant_dates": relevant_dates,
+            "cross_media_connections": cross_media,
+            "target_audience": target_audience, "budget": budget, "saved": True,
+        }
+    except Exception:
+        await db.rollback()
+        raise
+    finally:
+        await db.close()
 
 
 @router.post("/reroll")
@@ -247,11 +255,12 @@ async def reroll(req: RerollRequest, user_id: str = Depends(optional_user)):
             return {"cards": cards}
 
     # --- SAVED CAMPAIGN (database) ---
-    pool = await get_pool()
-    async with pool.acquire() as conn:
+    db = await get_db()
+    try:
         campaign_id_int = int(campaign_id)
 
-        row = await conn.fetchrow("SELECT topic, user_id FROM campaigns WHERE id = $1", campaign_id_int)
+        cursor = await db.execute("SELECT topic, user_id FROM campaigns WHERE id = ?", (campaign_id_int,))
+        row = await cursor.fetchone()
         if not row:
             raise HTTPException(404, "Campaign not found — save it first")
         campaign_owner = row["user_id"]
@@ -259,18 +268,20 @@ async def reroll(req: RerollRequest, user_id: str = Depends(optional_user)):
             raise HTTPException(403, "Not your campaign")
         topic = row["topic"]
 
-        media_rows = await conn.fetch(
-            "SELECT title, author, media_type, cover_url, openlibrary_key FROM media_results WHERE campaign_id = $1",
-            campaign_id_int,
+        cursor = await db.execute(
+            "SELECT title, author, media_type, cover_url, openlibrary_key FROM media_results WHERE campaign_id = ?",
+            (campaign_id_int,),
         )
+        media_rows = await cursor.fetchall()
         media = [dict(r) for r in media_rows]
 
         if card_id:
             card_id_int = int(card_id)
-            card_row = await conn.fetchrow(
-                "SELECT card_type, content, pinned FROM cards WHERE id = $1 AND campaign_id = $2",
-                card_id_int, campaign_id_int,
+            cursor = await db.execute(
+                "SELECT card_type, content, pinned FROM cards WHERE id = ? AND campaign_id = ?",
+                (card_id_int, campaign_id_int),
             )
+            card_row = await cursor.fetchone()
             if not card_row:
                 raise HTTPException(404, "Card not found")
             if card_row["pinned"]:
@@ -278,17 +289,19 @@ async def reroll(req: RerollRequest, user_id: str = Depends(optional_user)):
 
             current_content = json.loads(card_row["content"])
             new_card = await reroll_card(topic, card_row["card_type"], media, current_content)
-            await conn.execute(
-                "UPDATE cards SET content = $1 WHERE id = $2",
-                json.dumps(new_card.get("content", new_card)), card_id_int,
+            await db.execute(
+                "UPDATE cards SET content = ? WHERE id = ?",
+                (json.dumps(new_card.get("content", new_card)), card_id_int),
             )
+            await db.commit()
             await deduct_credits(user_id, "reroll")
             return {"card_id": card_id, "card_type": new_card.get("type", card_row["card_type"]), "content": new_card.get("content", new_card)}
         else:
-            all_cards = await conn.fetch(
-                "SELECT id, card_type, content, pinned FROM cards WHERE campaign_id = $1 ORDER BY position",
-                campaign_id_int,
+            cursor = await db.execute(
+                "SELECT id, card_type, content, pinned FROM cards WHERE campaign_id = ? ORDER BY position",
+                (campaign_id_int,),
             )
+            all_cards = await cursor.fetchall()
 
             async def _reroll_db_card(db_card):
                 if db_card["pinned"]:
@@ -301,15 +314,17 @@ async def reroll(req: RerollRequest, user_id: str = Depends(optional_user)):
 
             for db_card_id, new_content, _ in results:
                 if new_content is not None:
-                    await conn.execute("UPDATE cards SET content = $1 WHERE id = $2", new_content, db_card_id)
+                    await db.execute("UPDATE cards SET content = ? WHERE id = ?", (new_content, db_card_id))
 
             unpinned_count = sum(1 for _, nc, _ in results if nc is not None)
+            await db.commit()
             await deduct_credits(user_id, "reroll_all", cost_override=unpinned_count)
 
-            rows = await conn.fetch(
-                "SELECT id, card_type, content, pinned, position FROM cards WHERE campaign_id = $1 ORDER BY position",
-                campaign_id_int,
+            cursor = await db.execute(
+                "SELECT id, card_type, content, pinned, position FROM cards WHERE campaign_id = ? ORDER BY position",
+                (campaign_id_int,),
             )
+            rows = await cursor.fetchall()
             return {
                 "cards": [
                     {"id": r["id"], "card_type": r["card_type"], "content": json.loads(r["content"]),
@@ -317,18 +332,21 @@ async def reroll(req: RerollRequest, user_id: str = Depends(optional_user)):
                     for r in rows
                 ]
             }
+    finally:
+        await db.close()
 
 
 @router.post("/cards/{card_id}/pin")
 async def toggle_pin(card_id: int, user_id: str = Depends(get_current_user)):
-    pool = await get_pool()
-    async with pool.acquire() as conn:
-        row = await conn.fetchrow(
+    db = await get_db()
+    try:
+        cursor = await db.execute(
             """SELECT c.pinned, camp.user_id FROM cards c
                JOIN campaigns camp ON c.campaign_id = camp.id
-               WHERE c.id = $1""",
-            card_id,
+               WHERE c.id = ?""",
+            (card_id,),
         )
+        row = await cursor.fetchone()
         if not row:
             raise HTTPException(404, "Card not found — save the campaign first")
 
@@ -337,8 +355,11 @@ async def toggle_pin(card_id: int, user_id: str = Depends(get_current_user)):
             raise HTTPException(403, "Not your campaign")
 
         new_pin = 0 if row["pinned"] else 1
-        await conn.execute("UPDATE cards SET pinned = $1 WHERE id = $2", new_pin, card_id)
+        await db.execute("UPDATE cards SET pinned = ? WHERE id = ?", (new_pin, card_id))
+        await db.commit()
         return {"card_id": card_id, "pinned": bool(new_pin)}
+    finally:
+        await db.close()
 
 
 @router.post("/escape-plan")
@@ -364,12 +385,15 @@ async def generate_escape_plan(payload: dict, user_id: str = Depends(optional_us
 
         campaign_id = card_content.get("campaign_id")
         if campaign_id:
-            pool = await get_pool()
-            async with pool.acquire() as conn:
-                await conn.execute(
-                    "INSERT INTO escape_plans (campaign_id, user_id, topic, plan_data) VALUES ($1, $2, $3, $4)",
-                    campaign_id, user_id, topic, json.dumps(plan),
+            db = await get_db()
+            try:
+                await db.execute(
+                    "INSERT INTO escape_plans (campaign_id, user_id, topic, plan_data) VALUES (?, ?, ?, ?)",
+                    (campaign_id, user_id, topic, json.dumps(plan)),
                 )
+                await db.commit()
+            finally:
+                await db.close()
 
         await deduct_credits(user_id, "escape_plan")
         return plan
@@ -383,10 +407,13 @@ async def get_escape_plans(campaign_id: int, user_id: str = Depends(optional_use
     if not user_id:
         raise HTTPException(403, "Sign up or log in to view escape plans")
 
-    pool = await get_pool()
-    async with pool.acquire() as conn:
-        rows = await conn.fetch(
-            "SELECT id, topic, plan_data, created_at FROM escape_plans WHERE campaign_id = $1 AND user_id = $2 ORDER BY created_at DESC",
-            campaign_id, user_id,
+    db = await get_db()
+    try:
+        cursor = await db.execute(
+            "SELECT id, topic, plan_data, created_at FROM escape_plans WHERE campaign_id = ? AND user_id = ? ORDER BY created_at DESC",
+            (campaign_id, user_id),
         )
+        rows = await cursor.fetchall()
         return [{"id": r["id"], "topic": r["topic"], "plan": json.loads(r["plan_data"]), "created_at": r["created_at"]} for r in rows]
+    finally:
+        await db.close()

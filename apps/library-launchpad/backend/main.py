@@ -9,7 +9,7 @@ load_dotenv()
 
 from config import ALLOWED_ORIGINS, require_all
 from rate_limit import RateLimiterMiddleware
-from database import get_pool, close_pool
+from database import init_db
 
 logger = logging.getLogger("launchpad")
 
@@ -24,13 +24,12 @@ from services.stripe import handle_stripe_webhook
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
-    await get_pool()  # Initialize pool eagerly
-    logger.info("Database pool initialized")
+    await init_db()
+    logger.info("Database initialized")
     yield
     # Shutdown
     from routes.generate import cleanup_temp_campaigns
     await cleanup_temp_campaigns()
-    await close_pool()
     logger.info("Shutdown complete")
 
 
