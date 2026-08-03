@@ -402,13 +402,15 @@ export default function Crossword() {
         }
         .cw-title { font-size:clamp(36px,7vw,72px); font-weight:300; line-height:1.0; letter-spacing:-0.03em; color:var(--silver-100); margin:32px 0 24px; }
         .cw-line { display:block; overflow:hidden; }
-        .cw-line-inner { display:block; transform:translateY(110%); animation:cwReveal 1s cubic-bezier(0.22,1,0.36,1) forwards; }
-        .cw-line:nth-child(2) .cw-line-inner { animation-delay:0.15s; }
+        .cw-line-inner {
+          display:block; transform:translateY(110%);
+          animation: cwReveal 1s cubic-bezier(0.22,1,0.36,1) forwards, cwShimmer 6s ease-in-out 1.2s infinite;
+        }
+        .cw-line:nth-child(2) .cw-line-inner { animation-delay: 0.15s, 1.35s; }
         @keyframes cwReveal { to { transform:translateY(0); } }
         .cw-shimmer {
           background:linear-gradient(105deg,var(--silver-300) 0%,var(--silver-100) 20%,#ffffff 40%,var(--silver-200) 60%,var(--silver-400) 80%,var(--silver-300) 100%);
           background-size:200% 100%; -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
-          animation:cwShimmer 6s ease-in-out infinite;
         }
         @keyframes cwShimmer { 0%,100%{background-position:0% 50%} 50%{background-position:100% 50%} }
         .cw-sub { font-size:14px; color:var(--silver-500); max-width:520px; margin:0 auto; line-height:1.8; }
