@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { Loader2, BookOpen, Palette } from 'lucide-react'
 import ServiceCard from '../components/ServiceCard'
-import { Rocket, Puzzle } from 'lucide-react'
+import { Rocket, Puzzle, Newspaper } from 'lucide-react'
 import { buildProductUrl } from '../lib/auth-bridge'
 
 const SERVICES = [
@@ -31,6 +31,15 @@ const SERVICES = [
     description: 'AI-powered campaign generation, escape room design, and event flyers — built for how libraries actually work.',
     href: 'https://flyer.paperlab.xyz',
     tint: 'tint-rose',
+    tag: 'Live',
+    tagClass: 'bg-emerald-500/10 text-emerald-500',
+  },
+  {
+    icon: Newspaper,
+    title: 'Daily News Crossword',
+    description: 'A fresh crossword every day, generated from today\'s headlines. Answers pulled from the news, clues written by AI.',
+    href: '/crossword',
+    tint: 'tint-sky',
     tag: 'Live',
     tagClass: 'bg-emerald-500/10 text-emerald-500',
   },

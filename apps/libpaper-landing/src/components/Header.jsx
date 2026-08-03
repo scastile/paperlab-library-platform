@@ -1,11 +1,12 @@
 import { useAuth } from '../context/AuthContext'
-import { Rocket, Puzzle, Palette, LogOut } from 'lucide-react';
+import { Rocket, Puzzle, Palette, LogOut, Newspaper } from 'lucide-react';
 import CreditBadge from './CreditBadge'
 
 const SERVICES = [
   { icon: Rocket, label: 'Launchpad', href: 'https://launchpad.paperlab.xyz', tint: 'tint-indigo', color: '#6366f1' },
   { icon: Puzzle, label: 'Escape Room', href: 'https://escape.paperlab.xyz', tint: 'tint-violet', color: '#8b5cf6' },
   { icon: Palette, label: 'Flyer Studio', href: 'https://flyer.paperlab.xyz', tint: 'tint-rose', color: '#f43f5e' },
+  { icon: Newspaper, label: 'Crossword', href: '/crossword', tint: 'tint-sky', color: '#0ea5e9', internal: true },
 ]
 
 export default function Header() {
@@ -32,7 +33,7 @@ export default function Header() {
             return (
               <a
                 key={s.label}
-                href={s.soon ? undefined : productUrl(s.href)}
+                href={s.soon ? undefined : s.internal ? s.href : productUrl(s.href)}
                 onClick={s.soon ? (e) => e.preventDefault() : undefined}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 no-underline ${
                   s.soon

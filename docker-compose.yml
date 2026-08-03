@@ -123,6 +123,25 @@ services:
       - launchpad-backend
     restart: unless-stopped
 
+  # --- Daily Crossword ---
+  crossword-backend:
+    build:
+      context: .
+      dockerfile: apps/crossword/backend/Dockerfile
+    env_file: ./apps/crossword/backend/.env
+    volumes:
+      - ./apps/crossword/data:/app/data
+    networks:
+      - default
+      - papercore
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/crossword-api/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
   # --- LibBrain ---
   libbrain-backend:
     build:
