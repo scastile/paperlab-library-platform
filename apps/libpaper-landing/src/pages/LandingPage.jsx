@@ -42,7 +42,6 @@ const SERVICES = [
     tint: 'tint-amber',
     tag: 'Live',
     tagClass: 'bg-emerald-500/10 text-emerald-500',
-    alwaysOn: true,
   },
 ]
 
@@ -123,7 +122,7 @@ export default function LandingPage() {
         {/* Product Cards */}
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-20 relative">
           {SERVICES.map((s) => (
-            <ServiceCard key={s.title} {...s} href={user || s.alwaysOn ? s.href : undefined} />
+            <ServiceCard key={s.title} {...s} href={s.href} />
           ))}
         </section>
 
