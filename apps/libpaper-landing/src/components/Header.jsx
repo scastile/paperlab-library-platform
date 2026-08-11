@@ -9,21 +9,31 @@ const SERVICES = [
   { icon: CalendarDays, label: 'Event Planner', href: '/event-planner', tint: 'tint-amber', color: '#f59e0b', internal: true },
 ]
 
-export default function Header() {
+export default function Header({ noLogoLink = false }) {
   const { user, signOut } = useAuth()
 
   // SSO is cookie-based (.paperlab.xyz shared cookie), so product links are plain URLs —
   // each tool adopts the shared session on load.
   const productUrl = (url) => url
 
+  const logoContent = (
+    <span className="flex items-center gap-2.5 text-primary font-bold text-lg">
+      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--accent-solid)' }}><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+      <span>PaperLab</span>
+    </span>
+  )
+
   return (
     <header className="border-b border-default bg-card">
       <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-        {/* Left: Logo */}
-        <a href="/" className="flex items-center gap-2.5 text-primary font-bold text-lg no-underline">
-          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{color:'var(--accent-solid)'}}><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
-          <span>PaperLab</span>
-        </a>
+        {/* Left: Logo (not a link when noLogoLink) */}
+        {noLogoLink ? (
+          <div className="cursor-default">{logoContent}</div>
+        ) : (
+          <a href="/" className="flex items-center gap-2.5 text-primary font-bold text-lg no-underline">
+            {logoContent}
+          </a>
+        )}
 
         {/* Center: Service icons */}
         <nav className="hidden md:flex items-center gap-1">

@@ -7,9 +7,14 @@ Unified AI-powered toolkit for public libraries.
 | App | Port | URL | Description |
 |-----|------|-----|-------------|
 | **Library Launchpad** | 8200 | launchpad.paperlab.xyz | AI promotional campaigns & display themes |
-| **Escape Room Designer** | 8203 | escape.paperlab.xyz | Escape room concepts, puzzles, props |
-| **Event Flyer Studio** | 8204 | flyer.paperlab.xyz | AI-generated print-ready event flyers |
-| **LibPaper Landing** | 8202 | lib.paperlab.xyz | Unified product landing page |
+| **LibPaper Landing** | 8202 | lib.paperlab.xyz | Homepage + all tools (same-origin) |
+| **Escape Room Designer** | — | lib.paperlab.xyz/escape-room | Escape room concepts, puzzles, props |
+| **Event Flyer Studio** | — | lib.paperlab.xyz/flyer-studio | AI-generated print-ready event flyers |
+| **Event Planner** | — | lib.paperlab.xyz/event-planner | Library program planning & task checklists |
+
+Escape Room, Flyer Studio, and Event Planner are **pages inside the landing SPA** at
+`lib.paperlab.xyz` (their backends are separate containers proxied by the landing nginx).
+Only Launchpad has its own subdomain.
 
 ## Quick Start
 

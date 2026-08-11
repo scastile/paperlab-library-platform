@@ -14,16 +14,6 @@ services:
       - papercore
     restart: unless-stopped
 
-  frontend:
-    build: ./frontend
-    ports:
-      - "0.0.0.0:8204:80"
-    networks:
-      - default
-    depends_on:
-      - backend
-    restart: unless-stopped
-
 networks:
   default:
   papercore:

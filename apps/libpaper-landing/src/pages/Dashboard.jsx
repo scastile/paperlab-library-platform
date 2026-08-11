@@ -75,7 +75,7 @@ export default function Dashboard() {
     <div className="min-h-screen bg-page flex flex-col">
       <div className="page-gradient-bg"><div className="gradient-mesh" /></div>
 
-      <Header />
+      <Header noLogoLink />
 
       <main className="flex-1 max-w-6xl mx-auto px-6 py-10 w-full">
         <div className="mb-8">
