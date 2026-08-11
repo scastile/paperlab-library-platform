@@ -165,8 +165,13 @@ async def deduct_credits(user_id, action, campaign_id=None, cost_override=None, 
             if cursor.rowcount == 0:
                 await db.rollback()
                 return False, "Pro escape room limit reached"
-            await log_usage(user_id, action, 0, campaign_id, app, product)
             await db.commit()
+            # Log AFTER commit so we don't nest a second writer inside an open
+            # write transaction (SQLite "database is locked"). Best-effort audit.
+            try:
+                await log_usage(user_id, action, 0, campaign_id, app, product)
+            except Exception:
+                logger.warning("Failed to log usage", exc_info=True)
             return True, ""
         finally:
             await db.close()
@@ -234,8 +239,13 @@ async def deduct_credits(user_id, action, campaign_id=None, cost_override=None, 
                 "UPDATE credit_packs SET status = 'consumed' WHERE user_id = ? AND credits_remaining <= 0 AND status = 'active'",
                 (user_id,),
             )
-        await log_usage(user_id, action, cost, campaign_id, app, product)
         await db.commit()
+        # Log AFTER commit so we don't nest a second writer inside an open
+        # write transaction (SQLite "database is locked"). Best-effort audit.
+        try:
+            await log_usage(user_id, action, cost, campaign_id, app, product)
+        except Exception:
+            logger.warning("Failed to log usage", exc_info=True)
         return True, ""
     except Exception:
         await db.rollback()

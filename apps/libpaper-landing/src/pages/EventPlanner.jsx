@@ -3,9 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { CalendarDays, Plus, Trash2, MapPin, Users, Sparkles, CheckCircle2, CalendarClock, LogIn, Coins, X } from 'lucide-react'
 
-const STORAGE_KEY = 'paperlab_event_plans'
-const API_BASE = import.meta.env.VITE_API_URL || '/api'
-const PLAN_COST = 1
+const API_BASE = '/event-planner-api'
 
 const EVENT_TYPES = ['Program', 'Workshop', 'Display', 'Book Club', 'Reading', 'Film Screening', 'Outreach', 'Other']
 const AUDIENCES = ['All Ages', 'Children', 'Teens', 'Adults', 'Seniors', 'Educators']
@@ -93,6 +91,13 @@ function emptyForm() {
   }
 }
 
+function computeCost(form) {
+  const baseCost = BASE_COSTS[form.type] || 25
+  const cap = parseInt(form.capacity, 10)
+  const capacityCost = cap > 0 ? Math.min(60, Math.round(cap / 20) * 10) : 0
+  return baseCost + capacityCost
+}
+
 export default function EventPlanner() {
   const navigate = useNavigate()
   const { user, session } = useAuth()
@@ -100,28 +105,31 @@ export default function EventPlanner() {
   const [events, setEvents] = useState([])
   const [credits, setCredits] = useState(null)
   const [saving, setSaving] = useState(false)
+  const [loadingPlans, setLoadingPlans] = useState(false)
   const [error, setError] = useState('')
   const [savedFlash, setSavedFlash] = useState(false)
 
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY)
-      setEvents(raw ? JSON.parse(raw) : [])
-    } catch {
-      setEvents([])
-    }
-  }, [])
+  const authHeaders = () => {
+    const token = session?.access_token
+    return token ? { Authorization: `Bearer ${token}` } : {}
+  }
 
-  // Load credit balance when signed in
+  // Load the user's saved plans from the server
   useEffect(() => {
     if (!user || !session?.access_token) {
+      setEvents([])
       setCredits(null)
       return
     }
     let cancelled = false
-    fetch(`${API_BASE}/credits/balance`, {
-      headers: { Authorization: `Bearer ${session.access_token}` },
-    })
+    setLoadingPlans(true)
+    fetch(`${API_BASE}/plans`, { headers: authHeaders() })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (!cancelled && d?.plans) setEvents(d.plans) })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setLoadingPlans(false) })
+
+    fetch(`${API_BASE}/credits/balance`, { headers: authHeaders() })
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => { if (!cancelled) setCredits(d) })
       .catch(() => {})
@@ -142,13 +150,14 @@ export default function EventPlanner() {
 
     setSaving(true)
     try {
-      const res = await fetch(`${API_BASE}/credits/deduct`, {
+      const res = await fetch(`${API_BASE}/plans`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({ action: 'event_plan', app: 'event-planner', product: 'event-planner' }),
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        body: JSON.stringify({
+          ...form,
+          checklist: TYPE_CHECKLISTS[form.type] || TYPE_CHECKLISTS.Other,
+          estimated_cost: computeCost(form),
+        }),
       })
 
       if (!res.ok) {
@@ -157,42 +166,38 @@ export default function EventPlanner() {
         } else if (res.status === 401) {
           setError('Your session expired. Please sign in again.')
         } else {
-          setError(`Could not use credits (${res.status}). Please try again.`)
+          setError(`Could not save the plan (${res.status}). Please try again.`)
         }
         return
       }
 
-      const balance = await res.json()
-      setCredits(balance)
-
-      const checklist = TYPE_CHECKLISTS[form.type] || TYPE_CHECKLISTS.Other
-      const baseCost = BASE_COSTS[form.type] || 25
-      const cap = parseInt(form.capacity, 10)
-      const capacityCost = cap > 0 ? Math.min(60, Math.round(cap / 20) * 10) : 0
-      const newEvent = {
-        id: Date.now(),
-        ...form,
-        checklist,
-        estimated_cost: baseCost + capacityCost,
-        created_at: new Date().toISOString(),
+      const data = await res.json()
+      if (data?.plan) {
+        setEvents((prev) => [data.plan, ...prev])
       }
-      const next = [newEvent, ...events]
-      setEvents(next)
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
       setForm(emptyForm())
       setSavedFlash(true)
       setTimeout(() => setSavedFlash(false), 2000)
+      fetch(`${API_BASE}/credits/balance`, { headers: authHeaders() })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => d && setCredits(d))
+        .catch(() => {})
     } catch (e) {
-      setError('Network error while deducting credits. Please try again.')
+      setError('Network error while saving the plan. Please try again.')
     } finally {
       setSaving(false)
     }
   }
 
-  const deleteEvent = (id) => {
-    const next = events.filter((e) => e.id !== id)
-    setEvents(next)
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
+  const deleteEvent = async (id) => {
+    const token = session?.access_token
+    if (!token) return
+    try {
+      await fetch(`${API_BASE}/plans/${id}`, { method: 'DELETE', headers: authHeaders() })
+      setEvents((prev) => prev.filter((e) => e.id !== id))
+    } catch {
+      // ignore network hiccup; leave the plan in place
+    }
   }
 
   const inputCls =
@@ -223,8 +228,8 @@ export default function EventPlanner() {
             </span>
           </h1>
           <p className="text-lg text-secondary mt-4 max-w-2xl mx-auto hero-sub">
-            Plan a library program end to end — name it, pick a type, and get an auto-generated task
-            checklist and budget estimate. Saves cost 1 credit.
+            Plan a library program end to end — get an auto-generated task checklist and budget,
+            saved securely to your account. Saves cost 1 credit.
           </p>
         </header>
 
@@ -238,7 +243,7 @@ export default function EventPlanner() {
                   Balance:{' '}
                   <span className="font-semibold text-primary">{credits?.total_available ?? '…'} credits</span>
                 </span>
-                <span className="text-tertiary">· saving a plan costs {PLAN_COST} credit</span>
+                <span className="text-tertiary">· saving a plan costs 1 credit</span>
               </div>
               <a href="/dashboard" className="text-sm font-medium accent-solid hover:underline">Buy more credits</a>
             </div>
@@ -352,7 +357,7 @@ export default function EventPlanner() {
                 <Sparkles className="w-4 h-4 accent-solid" /> Budget Estimate
               </h3>
               <p className="text-3xl font-bold text-primary">
-                ${((BASE_COSTS[form.type] || 25) + Math.min(60, Math.round((parseInt(form.capacity, 10) || 0) / 20) * 10)).toFixed(2)}
+                ${computeCost(form).toFixed(2)}
                 <span className="text-base font-normal text-tertiary"> / event</span>
               </p>
               <p className="text-secondary text-sm mt-2">
@@ -362,14 +367,20 @@ export default function EventPlanner() {
           </aside>
         </div>
 
-        {/* Saved events */}
+        {/* Saved events (server-backed) */}
         <section>
           <h2 className="text-xl font-bold text-primary tracking-tight mb-5 flex items-center gap-2">
             <CalendarDays className="w-5 h-5 accent-solid" /> Saved Plans
             <span className="text-sm font-normal text-tertiary">({events.length})</span>
           </h2>
 
-          {events.length === 0 ? (
+          {loadingPlans ? (
+            <div className="glass-card p-10 text-center text-secondary">Loading your plans…</div>
+          ) : !user ? (
+            <div className="glass-card p-10 text-center text-secondary">
+              Sign in to see the plans saved to your account.
+            </div>
+          ) : events.length === 0 ? (
             <div className="glass-card p-10 text-center text-secondary">
               No plans yet. Build your first event above.
             </div>

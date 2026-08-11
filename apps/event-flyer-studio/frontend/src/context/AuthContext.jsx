@@ -1,27 +1,30 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { pb } from '../lib/pocketbase'
+import { readSharedToken, writeSharedToken, clearSharedToken } from '../lib/sso'
 
 const AuthContext = createContext(null)
 
-// SSO: adopt a session token passed via URL hash from lib.paperlab.xyz.
-// Log in once at the landing page, then jump between tools without re-logging in.
-async function importTokenFromHash() {
-  const hash = window.location.hash.substring(1)
-  const params = new URLSearchParams(hash)
-  const token = params.get('access_token')
-  if (!token) return
-  // Already signed in on this product — just clear the stray hash.
-  if (pb.authStore.isValid) {
-    history.replaceState(null, '', window.location.pathname + window.location.search)
-    return
+// SSO: adopt the session token from the shared .paperlab.xyz cookie.
+// Falls back to a legacy #access_token= hash from pre-cookie links.
+async function adoptSession() {
+  let token = readSharedToken()
+  if (!token) {
+    const hashToken = new URLSearchParams(window.location.hash.substring(1)).get('access_token')
+    token = hashToken || null
   }
+  if (!token) return
+  if (pb.authStore.isValid && pb.authStore.token === token) return
   try {
     pb.authStore.save(token, null)
-    await pb.collection('users').authRefresh()
+    await pb.collection('users').authRefresh() // validate + get a fresh token
+    writeSharedToken(pb.authStore.token)
   } catch {
     pb.authStore.clear()
+    clearSharedToken()
   }
-  history.replaceState(null, '', window.location.pathname + window.location.search)
+  if (window.location.hash) {
+    history.replaceState(null, '', window.location.pathname + window.location.search)
+  }
 }
 
 export function AuthProvider({ children }) {
@@ -30,21 +33,39 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     let cancelled = false
+
     const init = async () => {
-      await importTokenFromHash()
+      await adoptSession()
       if (cancelled) return
-      if (pb.authStore.isValid) {
-        setUser(pb.authStore.model)
-      }
+      if (pb.authStore.isValid) setUser(pb.authStore.model)
       setLoading(false)
     }
     init()
+
+    // Sync the shared cookie whenever the local auth store changes (login/logout)
     const unsub = pb.authStore.onChange((token, model) => {
-      if (!cancelled) setUser(model)
+      if (cancelled) return
+      setUser(model)
+      if (token) writeSharedToken(token)
+      else clearSharedToken()
     })
+
+    // Keep the session alive + the shared cookie fresh while any tool is open
+    const timer = setInterval(async () => {
+      if (!pb.authStore.isValid) return
+      try {
+        await pb.collection('users').authRefresh()
+        writeSharedToken(pb.authStore.token)
+      } catch {
+        pb.authStore.clear()
+        clearSharedToken()
+      }
+    }, 30 * 60 * 1000)
+
     return () => {
       cancelled = true
       unsub?.()
+      clearInterval(timer)
     }
   }, [])
 
@@ -66,6 +87,7 @@ export function AuthProvider({ children }) {
 
   const signOut = () => {
     pb.authStore.clear()
+    clearSharedToken()
     setUser(null)
   }
 
@@ -79,12 +101,10 @@ export function AuthProvider({ children }) {
   const value = {
     user,
     loading,
-    // Primary API used by App + Login components
     signIn,
     signUp,
     signOut,
     getToken,
-    // Aliases kept for older components that used the login/signup/logout names
     login: signIn,
     signup: signUp,
     logout: signOut,

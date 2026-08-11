@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { pb } from '../lib/pocketbase'
+import { readSharedToken, writeSharedToken, clearSharedToken } from '../lib/sso'
 
 const AuthContext = createContext({})
 
@@ -14,24 +15,27 @@ function sessionFromPb() {
   }
 }
 
-// SSO: adopt a session token passed via URL hash from a PaperLab product.
-// Lets the landing recognize a session created on another tool's domain.
-async function importTokenFromHash() {
-  const hash = window.location.hash.substring(1)
-  const params = new URLSearchParams(hash)
-  const token = params.get('access_token')
-  if (!token) return
-  if (pb.authStore.isValid) {
-    history.replaceState(null, '', window.location.pathname + window.location.search)
-    return
+// SSO: adopt the session token from the shared .paperlab.xyz cookie.
+// Falls back to a legacy #access_token= hash from pre-cookie links.
+async function adoptSession() {
+  let token = readSharedToken()
+  if (!token) {
+    const hashToken = new URLSearchParams(window.location.hash.substring(1)).get('access_token')
+    token = hashToken || null
   }
+  if (!token) return
+  if (pb.authStore.isValid && pb.authStore.token === token) return
   try {
     pb.authStore.save(token, null)
-    await pb.collection('users').authRefresh()
+    await pb.collection('users').authRefresh() // validate + get a fresh token
+    writeSharedToken(pb.authStore.token)
   } catch {
     pb.authStore.clear()
+    clearSharedToken()
   }
-  history.replaceState(null, '', window.location.pathname + window.location.search)
+  if (window.location.hash) {
+    history.replaceState(null, '', window.location.pathname + window.location.search)
+  }
 }
 
 export function AuthProvider({ children }) {
@@ -47,22 +51,22 @@ export function AuthProvider({ children }) {
       const justSignedOut = new URLSearchParams(window.location.search).get('signed_out') === '1'
       if (justSignedOut) {
         pb.authStore.clear()
+        clearSharedToken()
         if (mounted) {
           setSession(null)
           setUser(null)
           setLoading(false)
         }
-        // Clean up the param so it doesn't stick
         const cleaner = new URL(window.location.href)
         cleaner.searchParams.delete('signed_out')
         history.replaceState({}, '', cleaner.toString())
         return
       }
 
-      // 0b. SSO: adopt a token arriving from another PaperLab product
-      await importTokenFromHash()
+      // 0b. SSO: adopt the shared cookie (or a legacy hash) session
+      await adoptSession()
 
-      // 1. Restore an existing PocketBase session (authStore is localStorage-backed)
+      // 1. Restore an existing PocketBase session
       if (mounted) {
         if (pb.authStore.isValid) {
           setUser(pb.authStore.model)
@@ -71,20 +75,34 @@ export function AuthProvider({ children }) {
         setLoading(false)
       }
     }
-
     init()
 
-    // 2. Subscribe to auth state changes
+    // 2. Sync the shared cookie on auth changes (login/logout in any tab)
     const unsub = pb.authStore.onChange((token, model) => {
       if (!mounted) return
       setUser(model)
       setSession(sessionFromPb())
       setLoading(false)
+      if (token) writeSharedToken(token)
+      else clearSharedToken()
     })
+
+    // 3. Keep the session + shared cookie alive while any tool is open
+    const timer = setInterval(async () => {
+      if (!pb.authStore.isValid) return
+      try {
+        await pb.collection('users').authRefresh()
+        writeSharedToken(pb.authStore.token)
+      } catch {
+        pb.authStore.clear()
+        clearSharedToken()
+      }
+    }, 30 * 60 * 1000)
 
     return () => {
       mounted = false
       unsub?.()
+      clearInterval(timer)
     }
   }, [])
 
@@ -104,6 +122,7 @@ export function AuthProvider({ children }) {
 
   const signOut = async () => {
     pb.authStore.clear()
+    clearSharedToken()
     setUser(null)
     setSession(null)
     window.location.href = 'https://lib.paperlab.xyz/?signed_out=1'

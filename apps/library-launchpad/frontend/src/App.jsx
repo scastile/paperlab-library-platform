@@ -354,7 +354,7 @@ export default function App() {
           <div className="flex items-center gap-2 flex-shrink-0">
             {/* Return home — always available, especially in demo/guest mode */}
             <a
-              href={getToken() ? `https://lib.paperlab.xyz/#access_token=${getToken()}` : 'https://lib.paperlab.xyz'}
+              href="https://lib.paperlab.xyz"
               className="flex items-center gap-2 px-3 py-1.5 text-sm text-secondary hover:text-primary hover:bg-hover rounded-lg transition-all duration-250 no-underline"
             >
               <ArrowLeft className="w-4 h-4" />

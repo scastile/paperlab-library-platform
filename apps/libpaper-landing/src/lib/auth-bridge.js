@@ -1,17 +1,11 @@
 /**
- * Auth Bridge — pass the PocketBase session token to other PaperLab products
- * via URL fragment. Fragment is never sent to the server and is stripped
- * immediately after hydration.
+ * Auth Bridge — SSO is cookie-based (shared .paperlab.xyz cookie), so product
+ * URLs are plain; each tool adopts the shared session on load. These helpers
+ * are kept for backward compatibility with the landing's redirect flow.
  */
 
-export function buildProductUrl(baseUrl, session) {
-  const token = session?.access_token
-  if (!token) return baseUrl
-  const url = new URL(baseUrl)
-  url.hash = new URLSearchParams({
-    access_token: token,
-  }).toString()
-  return url.toString()
+export function buildProductUrl(baseUrl) {
+  return baseUrl
 }
 
 export function getGatewayLoginUrl(redirectUrl) {

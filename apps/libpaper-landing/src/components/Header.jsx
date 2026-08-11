@@ -10,12 +10,11 @@ const SERVICES = [
 ]
 
 export default function Header() {
-  const { user, signOut, session } = useAuth()
+  const { user, signOut } = useAuth()
 
-  const productUrl = (url) => {
-    if (!session?.access_token) return url
-    return `${url}/#access_token=${session.access_token}&refresh_token=${session.refresh_token}`
-  }
+  // SSO is cookie-based (.paperlab.xyz shared cookie), so product links are plain URLs —
+  // each tool adopts the shared session on load.
+  const productUrl = (url) => url
 
   return (
     <header className="border-b border-default bg-card">
