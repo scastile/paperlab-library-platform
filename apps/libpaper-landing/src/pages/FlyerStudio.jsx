@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import Header from '../components/Header'
 import FlyerPreview from '../components/FlyerPreview'
 import {
-  Loader2, Wand2, Save, Trash2, FolderOpen, Palette, ChevronLeft,
+  Loader2, Wand2, Save, Trash2, FolderOpen, Palette, ChevronLeft, Sparkles,
   LayoutTemplate, Type, AlignLeft, Printer, FileImage, Image as ImageIcon, LogIn, X
 } from 'lucide-react'
 
@@ -347,6 +347,7 @@ export default function FlyerStudio() {
   const [savedFlyers, setSavedFlyers] = useState([])
   const [showSaved, setShowSaved] = useState(false)
   const [savedFlyerId, setSavedFlyerId] = useState(null)
+  const [needCredits, setNeedCredits] = useState(false)
 
   useEffect(() => {
     if (!user) return
@@ -354,7 +355,7 @@ export default function FlyerStudio() {
   }, [user, getToken])
 
   const generate = async (payload) => {
-    setLoading(true); setError(''); setFlyer(null); setInputs(payload); setSavedFlyerId(null)
+    setLoading(true); setError(''); setFlyer(null); setInputs(payload); setSavedFlyerId(null); setNeedCredits(false)
     try {
       const res = await apiCall('/generate', { method: 'POST', body: JSON.stringify(payload) }, getToken)
       const data = await res.json()
@@ -362,7 +363,8 @@ export default function FlyerStudio() {
       window.scrollTo({ top: 0, behavior: 'smooth' })
     } catch (e) {
       if (e.message?.includes('402') || e.message?.includes('Insufficient credits')) {
-        setError('You need more credits to generate a flyer. Top up from your dashboard.')
+        setNeedCredits(true)
+        setError('You\'re out of credits. Flyers cost 6–10 credits — grab more to keep going.')
       } else {
         setError(e.message || 'Failed to generate flyer')
       }
@@ -474,7 +476,17 @@ export default function FlyerStudio() {
               {error && (
                 <div className="max-w-3xl mx-auto p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-500 text-sm flex items-start gap-2">
                   <X className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                  {error}
+                  <div className="flex-1">
+                    {error}
+                    {needCredits && (
+                      <button
+                        onClick={() => window.dispatchEvent(new Event('paperlab:open-credits'))}
+                        className="btn-gradient inline-flex mt-3 px-4 py-2 text-sm"
+                      >
+                        <Sparkles className="w-4 h-4" /> Get more credits
+                      </button>
+                    )}
+                  </div>
                 </div>
               )}
 

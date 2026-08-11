@@ -61,6 +61,14 @@ export default function CreditBadge() {
     }
   }, [user, session?.access_token])
 
+  // Allow any page to open the purchase modal (e.g. 'Get more credits' on
+  // insufficient-credits errors) by dispatching a window event.
+  useEffect(() => {
+    const open = () => setShowModal(true)
+    window.addEventListener('paperlab:open-credits', open)
+    return () => window.removeEventListener('paperlab:open-credits', open)
+  }, [])
+
   const handlePurchase = async (packId, type = 'pack') => {
     if (!session?.access_token) return
     setPurchasing(packId)

@@ -339,6 +339,7 @@ export default function EscapeRoom() {
   const [saving, setSaving] = useState(false)
   const [savedPlans, setSavedPlans] = useState([])
   const [showSaved, setShowSaved] = useState(false)
+  const [needCredits, setNeedCredits] = useState(false)
 
   useEffect(() => {
     if (!user) return
@@ -351,6 +352,7 @@ export default function EscapeRoom() {
   const generate = async (payload) => {
     setLoading(true)
     setError('')
+    setNeedCredits(false)
     setPlan(null)
     setInputs(payload)
     try {
@@ -360,7 +362,8 @@ export default function EscapeRoom() {
       window.scrollTo({ top: 0, behavior: 'smooth' })
     } catch (e) {
       if (e.message?.includes('402') || e.message?.includes('Insufficient credits')) {
-        setError('You need more credits to generate an escape room. Top up from your dashboard.')
+        setNeedCredits(true)
+        setError('You\'re out of credits. Escape rooms cost 10 credits — grab more to keep going.')
       } else {
         setError(e.message || 'Failed to generate escape room')
       }
@@ -482,7 +485,17 @@ export default function EscapeRoom() {
           {error && (
             <div className="max-w-2xl mx-auto mb-6 p-4 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-sm no-print flex items-start gap-2">
               <X className="w-4 h-4 flex-shrink-0 mt-0.5" />
-              {error}
+              <div className="flex-1">
+                {error}
+                {needCredits && (
+                  <button
+                    onClick={() => window.dispatchEvent(new Event('paperlab:open-credits'))}
+                    className="btn-gradient inline-flex mt-3 px-4 py-2 text-sm"
+                  >
+                    <Sparkles className="w-4 h-4" /> Get more credits
+                  </button>
+                )}
+              </div>
             </div>
           )}
 

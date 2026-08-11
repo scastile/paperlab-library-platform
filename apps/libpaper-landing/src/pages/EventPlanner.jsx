@@ -108,6 +108,7 @@ export default function EventPlanner() {
   const [loadingPlans, setLoadingPlans] = useState(false)
   const [error, setError] = useState('')
   const [savedFlash, setSavedFlash] = useState(false)
+  const [needCredits, setNeedCredits] = useState(false)
 
   const authHeaders = () => {
     const token = session?.access_token
@@ -142,6 +143,7 @@ export default function EventPlanner() {
     if (!form.name.trim()) return
     setError('')
     setSavedFlash(false)
+    setNeedCredits(false)
 
     if (!user || !session?.access_token) {
       setError('Please sign in to save event plans. Plans cost 1 credit each.')
@@ -162,7 +164,8 @@ export default function EventPlanner() {
 
       if (!res.ok) {
         if (res.status === 402) {
-          setError('Not enough credits. Event plans cost 1 credit — top up from your dashboard.')
+          setNeedCredits(true)
+          setError('You\'re out of credits. Event plans cost 1 credit — grab more to keep going.')
         } else if (res.status === 401) {
           setError('Your session expired. Please sign in again.')
         } else {
@@ -261,7 +264,17 @@ export default function EventPlanner() {
         {error && (
           <div className="max-w-3xl mx-auto mb-6 px-4 py-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-sm flex items-start gap-2">
             <X className="w-4 h-4 flex-shrink-0 mt-0.5" />
-            {error}
+            <div className="flex-1">
+              {error}
+              {needCredits && (
+                <button
+                  onClick={() => window.dispatchEvent(new Event('paperlab:open-credits'))}
+                  className="btn-gradient inline-flex mt-3 px-4 py-2 text-sm"
+                >
+                  <Sparkles className="w-4 h-4" /> Get more credits
+                </button>
+              )}
+            </div>
           </div>
         )}
 
