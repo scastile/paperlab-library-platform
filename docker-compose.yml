@@ -22,7 +22,7 @@ services:
     build:
       context: ./apps/library-launchpad/frontend
       args:
-        VITE_POCKETBASE_URL: http://10.0.0.179:8070
+        VITE_POCKETBASE_URL: /pb
     ports:
       - "8200:80"
     extra_hosts:
@@ -56,7 +56,7 @@ services:
     build:
       context: ./apps/escape-room-designer/frontend
       args:
-        VITE_POCKETBASE_URL: http://10.0.0.179:8070
+        VITE_POCKETBASE_URL: /pb
     ports:
       - "8203:80"
     networks:
@@ -92,7 +92,7 @@ services:
     build:
       context: ./apps/event-flyer-studio/frontend
       args:
-        VITE_POCKETBASE_URL: http://10.0.0.179:8070
+        VITE_POCKETBASE_URL: /pb
     ports:
       - "8204:80"
     networks:
@@ -106,7 +106,7 @@ services:
     build:
       context: ./apps/libpaper-landing
       args:
-        VITE_POCKETBASE_URL: http://10.0.0.179:8070
+        VITE_POCKETBASE_URL: /pb
     ports:
       - "8202:80"
     networks:
