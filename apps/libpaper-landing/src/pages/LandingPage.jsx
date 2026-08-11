@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { Loader2, BookOpen, Palette } from 'lucide-react'
 import ServiceCard from '../components/ServiceCard'
-import { Rocket, Puzzle, Newspaper } from 'lucide-react'
+import { Rocket, Puzzle, Newspaper, CalendarDays } from 'lucide-react'
 import { buildProductUrl } from '../lib/auth-bridge'
 
 const SERVICES = [
@@ -42,6 +42,16 @@ const SERVICES = [
     tint: 'tint-sky',
     tag: 'Live',
     tagClass: 'bg-emerald-500/10 text-emerald-500',
+  },
+  {
+    icon: CalendarDays,
+    title: 'Event Planner',
+    description: 'Plan library programs end to end — auto-generated task checklists, budgets, and timelines for any event type. No signup needed.',
+    href: '/event-planner',
+    tint: 'tint-amber',
+    tag: 'Free',
+    tagClass: 'bg-emerald-500/10 text-emerald-500',
+    alwaysOn: true,
   },
 ]
 
@@ -122,7 +132,7 @@ export default function LandingPage() {
         {/* Product Cards */}
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-20 relative">
           {SERVICES.map((s) => (
-            <ServiceCard key={s.title} {...s} href={user ? s.href : undefined} />
+            <ServiceCard key={s.title} {...s} href={user || s.alwaysOn ? s.href : undefined} />
           ))}
         </section>
 

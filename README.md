@@ -24,7 +24,7 @@ docker compose up -d --build
 
 ## Architecture
 
-- **Auth**: Supabase (self-hosted at `10.0.0.179:8001`)
+- **Auth**: PocketBase (self-hosted at `10.0.0.179:8070`, container `pocketbase`)
 - **Credits**: Library Launchpad backend is the credit authority; other apps proxy to it
 - **Network**: All backends attach to the external `papercore` Docker network for internal communication
 - **AI**: OpenRouter (`google/gemini-2.5-flash-lite` / `google/gemini-2.5-flash-image`)

@@ -8,7 +8,7 @@ import WelcomeModal from './components/WelcomeModal'
 import Login from './components/Login'
 import GenerationStatus from './components/GenerationStatus'
 import { useAuth } from './context/AuthContext'
-import { LogOut, Lock, Sparkles, CreditCard, Trash2, Sun, Moon, ChevronDown, ChevronRight } from 'lucide-react'
+import { LogOut, Lock, Sparkles, CreditCard, Trash2, Sun, Moon, ChevronDown, ChevronRight, ArrowLeft } from 'lucide-react'
 import { getRandomExample } from './data/exampleCampaigns'
 import { featuredCampaigns } from './data/exampleCampaigns'
 import Footer from './components/Footer'
@@ -342,6 +342,14 @@ export default function App() {
             </h1>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
+            {/* Return home — always available, especially in demo/guest mode */}
+            <a
+              href="https://lib.paperlab.xyz"
+              className="flex items-center gap-2 px-3 py-1.5 text-sm text-secondary hover:text-primary hover:bg-hover rounded-lg transition-all duration-250 no-underline"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Home
+            </a>
             <button
               onClick={toggleTheme}
               aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}

@@ -3,6 +3,7 @@ import { useAuth } from './context/AuthContext'
 import LandingPage from './pages/LandingPage'
 import Dashboard from './pages/Dashboard'
 import Crossword from './pages/Crossword'
+import EventPlanner from './pages/EventPlanner'
 
 export default function App() {
   const { loading } = useAuth()
@@ -20,6 +21,7 @@ export default function App() {
       <Route path="/" element={<LandingPage />} />
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/crossword" element={<Crossword />} />
+      <Route path="/event-planner" element={<EventPlanner />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )

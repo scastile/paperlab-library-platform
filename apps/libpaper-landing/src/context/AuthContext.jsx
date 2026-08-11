@@ -1,7 +1,18 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
-import { supabase } from '../lib/supabase'
+import { pb } from '../lib/pocketbase'
 
 const AuthContext = createContext({})
+
+// Shape the PocketBase auth store into a session-like object so existing
+// consumers (Header, CreditBadge, LandingPage, auth-bridge) keep working.
+function sessionFromPb() {
+  const token = pb.authStore.token || null
+  return {
+    access_token: token,
+    refresh_token: token, // PocketBase auto-refreshes internally; mirror the token
+    expires_at: null,
+  }
+}
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
@@ -10,94 +21,66 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     let mounted = true
-    const subscriptionRef = { current: null }
 
-    const init = async () => {
-      // 0. If coming back from signOut, force clean state — don't restore cached session
-      const urlParams = new URLSearchParams(window.location.search)
-      const justSignedOut = urlParams.get('signed_out') === '1'
-      if (justSignedOut) {
-        // Force clear any lingering local session state
-        await supabase.auth.signOut({ scope: 'local' })
-        if (mounted) {
-          setSession(null)
-          setUser(null)
-          setLoading(false)
-        }
-        // Clean up the param so it doesn't stick
-        const cleaner = new URL(window.location.href)
-        cleaner.searchParams.delete('signed_out')
-        history.replaceState({}, '', cleaner.toString())
-        return
+    // 0. If coming back from signOut, force clean state — don't restore cached session
+    const justSignedOut = new URLSearchParams(window.location.search).get('signed_out') === '1'
+    if (justSignedOut) {
+      pb.authStore.clear()
+      if (mounted) {
+        setSession(null)
+        setUser(null)
+        setLoading(false)
       }
-
-      // 1. Try hash hydration first (from auth bridge)
-      const hash = window.location.hash.substring(1)
-      const params = new URLSearchParams(hash)
-      const accessToken = params.get('access_token')
-      const refreshToken = params.get('refresh_token')
-
-      if (accessToken && refreshToken) {
-        const { data, error } = await supabase.auth.setSession({
-          access_token: accessToken,
-          refresh_token: refreshToken
-        })
-        if (!error && mounted) {
-          setSession(data.session)
-          setUser(data.session?.user ?? null)
-          setLoading(false)
-        }
-        history.replaceState(null, '', window.location.pathname + window.location.search)
-      } else {
-        // 2. Otherwise check existing session
-        const { data: { session } } = await supabase.auth.getSession()
-        if (mounted) {
-          setSession(session)
-          setUser(session?.user ?? null)
-          setLoading(false)
-        }
-      }
-
-      // 3. Subscribe to auth state changes
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-        if (mounted) {
-          setSession(session)
-          setUser(session?.user ?? null)
-          setLoading(false)
-        }
-      })
-      subscriptionRef.current = subscription
+      // Clean up the param so it doesn't stick
+      const cleaner = new URL(window.location.href)
+      cleaner.searchParams.delete('signed_out')
+      history.replaceState({}, '', cleaner.toString())
+      return
     }
 
-    init()
+    // 1. Restore an existing PocketBase session (authStore is localStorage-backed)
+    if (pb.authStore.isValid) {
+      setUser(pb.authStore.model)
+      setSession(sessionFromPb())
+    }
+    setLoading(false)
+
+    // 2. Subscribe to auth state changes
+    const unsub = pb.authStore.onChange((token, model) => {
+      if (!mounted) return
+      setUser(model)
+      setSession(sessionFromPb())
+      setLoading(false)
+    })
 
     return () => {
       mounted = false
-      if (subscriptionRef.current) {
-        subscriptionRef.current.unsubscribe()
-      }
+      unsub?.()
     }
   }, [])
 
   const signIn = async (email, password) => {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) throw error
-    return data
+    const authData = await pb.collection('users').authWithPassword(email, password)
+    return { user: authData.record, session: sessionFromPb() }
   }
 
   const signUp = async (email, password) => {
-    const { data, error } = await supabase.auth.signUp({ email, password })
-    if (error) throw error
-    return data
+    await pb.collection('users').create({
+      email,
+      password,
+      passwordConfirm: password,
+    })
+    return signIn(email, password)
   }
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut()
-    if (error) throw error
+    pb.authStore.clear()
+    setUser(null)
+    setSession(null)
     window.location.href = 'https://lib.paperlab.xyz/?signed_out=1'
   }
 
-  const getToken = useCallback(() => session?.access_token || null, [session])
+  const getToken = useCallback(() => pb.authStore.token || null, [])
 
   return (
     <AuthContext.Provider value={{ user, session, loading, signIn, signUp, signOut, getToken }}>

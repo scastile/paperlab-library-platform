@@ -22,7 +22,7 @@ load_dotenv = __import__("dotenv").load_dotenv
 load_dotenv()
 
 # Fail fast if critical env vars are missing
-require_env(["OPENROUTER_API_KEY", "SUPABASE_JWT_SECRET"])
+require_env(["OPENROUTER_API_KEY", "POCKETBASE_URL"])
 
 
 LAUNCHPAD_URL = os.getenv("LAUNCHPAD_URL", "http://launchpad-backend:8000")

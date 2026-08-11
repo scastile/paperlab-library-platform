@@ -1,5 +1,5 @@
 import { useAuth } from '../context/AuthContext'
-import { Rocket, Puzzle, Palette, LogOut, Newspaper } from 'lucide-react';
+import { Rocket, Puzzle, Palette, LogOut, Newspaper, CalendarDays } from 'lucide-react';
 import CreditBadge from './CreditBadge'
 
 const SERVICES = [
@@ -7,6 +7,7 @@ const SERVICES = [
   { icon: Puzzle, label: 'Escape Room', href: 'https://escape.paperlab.xyz', tint: 'tint-violet', color: '#8b5cf6' },
   { icon: Palette, label: 'Flyer Studio', href: 'https://flyer.paperlab.xyz', tint: 'tint-rose', color: '#f43f5e' },
   { icon: Newspaper, label: 'Crossword', href: '/crossword', tint: 'tint-sky', color: '#0ea5e9', internal: true },
+  { icon: CalendarDays, label: 'Event Planner', href: '/event-planner', tint: 'tint-amber', color: '#f59e0b', internal: true },
 ]
 
 export default function Header() {
