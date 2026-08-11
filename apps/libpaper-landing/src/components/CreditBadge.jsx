@@ -94,13 +94,24 @@ export default function CreditBadge() {
     }
   }
 
+  const balance = credits?.total_available
+  const low = balance != null && balance <= 3
+  const critical = balance != null && balance <= 1
+
   return (
     <>
       <button
         onClick={() => setShowModal(true)}
-        className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-page border border-default text-sm font-medium text-primary hover:bg-hover transition-all duration-200"
+        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+          critical
+            ? 'bg-amber-500/10 border border-amber-500/40 text-amber-600 hover:bg-amber-500/15'
+            : 'bg-page border border-default text-primary hover:bg-hover'
+        }`}
+        title={critical ? 'You\'re almost out of credits' : low ? 'Low on credits' : 'Credits'}
       >
+        {critical && <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />}
         <span>{credits?.total_available ?? '—'} credits</span>
+        {critical && <span className="text-[10px] font-semibold uppercase">Low</span>}
         <span className="flex items-center justify-center w-5 h-5 rounded-full bg-[var(--accent-solid)] text-white">
           <Plus className="w-3 h-3" />
         </span>

@@ -36,7 +36,7 @@ async def get_or_create_user(user_id: str) -> dict:
         await db.execute(
             """INSERT INTO users (id, credits, has_received_free_credits,
                last_credit_reset, escape_rooms_used_monthly)
-               VALUES (?, 10, 1, ?, 0)""",
+               VALUES (?, 5, 1, ?, 0)""",
             (user_id, date.today().isoformat()),
         )
         await db.commit()

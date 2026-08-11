@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { track } from '../lib/analytics'
 import Header from '../components/Header'
 import { Loader2, Wand2, Printer, Clock, Puzzle, Box, BookOpen, ListChecks, Map, Sparkles, ChevronDown, ChevronUp, Save, Trash2, FolderOpen, LogIn, X } from 'lucide-react'
 
@@ -359,10 +360,13 @@ export default function EscapeRoom() {
       const res = await apiCall('/generate', { method: 'POST', body: JSON.stringify(payload) }, getToken)
       const data = await res.json()
       setPlan(data.plan)
+      track('tool_use', { tool: 'escape' })
+      track('first_generate', { tool: 'escape' })
       window.scrollTo({ top: 0, behavior: 'smooth' })
     } catch (e) {
       if (e.message?.includes('402') || e.message?.includes('Insufficient credits')) {
         setNeedCredits(true)
+        track('out_of_credits', { tool: 'escape' })
         setError('You\'re out of credits. Escape rooms cost 10 credits — grab more to keep going.')
       } else {
         setError(e.message || 'Failed to generate escape room')

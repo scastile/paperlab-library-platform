@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams, Navigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { Loader2, BookOpen, Palette } from 'lucide-react'
 import ServiceCard from '../components/ServiceCard'
@@ -62,8 +62,8 @@ export default function LandingPage() {
       return null
     }
     if (!searchParams.get('signed_out')) {
-      navigate('/dashboard')
-      return null
+      // Use <Navigate> instead of navigate() during render to avoid a blank frame
+      return <Navigate to="/dashboard" replace />
     }
   }
 
@@ -134,7 +134,7 @@ export default function LandingPage() {
               {mode === 'signin' ? 'Welcome back' : 'Create your account'}
             </h2>
             <p className="text-base text-secondary mb-8">
-              {mode === 'signin' ? 'Sign in to your campaigns' : 'Get 10 free credits to try it out'}
+              {mode === 'signin' ? 'Sign in to your campaigns' : 'Get 5 free credits to try it out'}
             </p>
 
             {/* Product Icon Graphic */}
@@ -197,7 +197,7 @@ export default function LandingPage() {
                 ) : mode === 'signin' ? (
                   'Sign In'
                 ) : (
-                  'Create Account & Get 10 Free Credits'
+                  'Create Account & Get 5 Free Credits'
                 )}
               </button>
 
@@ -221,8 +221,8 @@ export default function LandingPage() {
 
             <div className="mt-auto pt-6">
               <div className="rounded-lg border border-[var(--accent-solid)]/10 bg-[var(--accent-solid)]/[0.03] backdrop-blur-sm p-5 text-center">
-                <p className="font-semibold text-[var(--accent-solid)] text-base">Get 10 free credits on signup</p>
-                <p className="text-secondary text-sm mt-1.5">Enough for a full campaign + rerolls, or try any product</p>
+                <p className="font-semibold text-[var(--accent-solid)] text-base">Get 5 free credits on signup</p>
+                <p className="text-secondary text-sm mt-1.5">Enough for a full campaign — no card required</p>
               </div>
             </div>
           </div>
@@ -246,7 +246,7 @@ export default function LandingPage() {
             {/* Pricing Card */}
             <div className="glass-card p-6">
               <div className="rounded-lg border border-[var(--accent-solid)]/10 bg-[var(--accent-solid)]/[0.03] backdrop-blur-sm p-5 text-center mb-4">
-                <p className="font-semibold text-[var(--accent-solid)] text-base">10 free credits on signup</p>
+                <p className="font-semibold text-[var(--accent-solid)] text-base">5 free credits on signup</p>
                 <p className="text-secondary text-sm mt-1.5">No card required · Enough for a full campaign</p>
               </div>
 

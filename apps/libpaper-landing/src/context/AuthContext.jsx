@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { pb } from '../lib/pocketbase'
 import { readSharedToken, writeSharedToken, clearSharedToken } from '../lib/sso'
+import { track } from '../lib/analytics'
 
 const AuthContext = createContext({})
 
@@ -108,6 +109,7 @@ export function AuthProvider({ children }) {
 
   const signIn = async (email, password) => {
     const authData = await pb.collection('users').authWithPassword(email, password)
+    track('login')
     return { user: authData.record, session: sessionFromPb() }
   }
 
@@ -117,6 +119,7 @@ export function AuthProvider({ children }) {
       password,
       passwordConfirm: password,
     })
+    track('signup', { email })
     return signIn(email, password)
   }
 

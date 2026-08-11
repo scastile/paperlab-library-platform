@@ -6,6 +6,20 @@ from services.credits import add_credits_to_user, set_user_subscription
 
 logger = logging.getLogger("launchpad")
 
+async def _record_event(user_id, event, props=None):
+    """Fire-and-forget analytics row. Never raises — telemetry can't break billing."""
+    try:
+        from database import get_db
+        db = await get_db()
+        await db.execute(
+            "INSERT INTO analytics_events (user_id, event, props) VALUES (?, ?, ?)",
+            (user_id, event, __import__("json").dumps(props or {})[:2000]),
+        )
+        await db.commit()
+        await db.close()
+    except Exception as exc:  # pragma: no cover
+        logger.warning("analytics write failed: %s", exc)
+
 # Initialize Stripe
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY", "")
 STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET", "")
@@ -164,6 +178,10 @@ async def handle_checkout_complete(session: dict):
         credits = session.get("metadata", {}).get("credits")
         if credits:
             await add_credits_to_user(user_id, int(credits), "pack")
+        await _record_event(user_id, "purchase", {
+            "credits": int(credits) if credits else 0,
+            "amount": session.get("amount_total"),
+        })
 
 
 async def handle_subscription_created(subscription: dict):
@@ -222,6 +240,7 @@ async def handle_subscription_created(subscription: dict):
             # Store both tier and the specific price ID for allocation lookups
             await set_user_subscription(user_id, tier, subscription.get("id"), price_id)
             logger.info(f"Subscription created: user={user_id}, tier={tier}")
+            await _record_event(user_id, "subscription", {"tier": tier})
         else:
             logger.error(f"Subscription created but no matching user found. Customer: {customer_id}")
     finally:

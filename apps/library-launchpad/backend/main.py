@@ -18,6 +18,7 @@ require_all()
 from routes.generate import router as generate_router
 from routes.campaigns import router as campaigns_router
 from routes.credits import router as credits_router
+from routes.analytics import router as analytics_router
 from services.stripe import handle_stripe_webhook
 
 
@@ -51,6 +52,7 @@ app.add_middleware(
 app.include_router(generate_router, prefix="/api")
 app.include_router(campaigns_router, prefix="/api")
 app.include_router(credits_router, prefix="/api")
+app.include_router(analytics_router, prefix="/api")
 
 
 @app.post("/api/stripe/webhook")

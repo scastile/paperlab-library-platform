@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { track } from '../lib/analytics'
 import { CalendarDays, Plus, Trash2, MapPin, Users, Sparkles, CheckCircle2, CalendarClock, LogIn, Coins, X } from 'lucide-react'
 
 const API_BASE = '/event-planner-api'
@@ -165,6 +166,7 @@ export default function EventPlanner() {
       if (!res.ok) {
         if (res.status === 402) {
           setNeedCredits(true)
+          track('out_of_credits', { tool: 'event_plan' })
           setError('You\'re out of credits. Event plans cost 1 credit — grab more to keep going.')
         } else if (res.status === 401) {
           setError('Your session expired. Please sign in again.')
@@ -177,6 +179,8 @@ export default function EventPlanner() {
       const data = await res.json()
       if (data?.plan) {
         setEvents((prev) => [data.plan, ...prev])
+        track('tool_use', { tool: 'event_plan' })
+        track('first_generate', { tool: 'event_plan' })
       }
       setForm(emptyForm())
       setSavedFlash(true)

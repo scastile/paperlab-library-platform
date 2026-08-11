@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { track } from '../lib/analytics'
 import Header from '../components/Header'
 import FlyerPreview from '../components/FlyerPreview'
 import {
@@ -360,10 +361,13 @@ export default function FlyerStudio() {
       const res = await apiCall('/generate', { method: 'POST', body: JSON.stringify(payload) }, getToken)
       const data = await res.json()
       setFlyer(data)
+      track('tool_use', { tool: 'flyer' })
+      track('first_generate', { tool: 'flyer' })
       window.scrollTo({ top: 0, behavior: 'smooth' })
     } catch (e) {
       if (e.message?.includes('402') || e.message?.includes('Insufficient credits')) {
         setNeedCredits(true)
+        track('out_of_credits', { tool: 'flyer' })
         setError('You\'re out of credits. Flyers cost 6–10 credits — grab more to keep going.')
       } else {
         setError(e.message || 'Failed to generate flyer')
