@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { Loader2, BookOpen, Palette } from 'lucide-react'
 import ServiceCard from '../components/ServiceCard'
-import { Rocket, Puzzle, Newspaper } from 'lucide-react'
+import { Rocket, Puzzle, Newspaper, CalendarDays } from 'lucide-react'
 import { buildProductUrl } from '../lib/auth-bridge'
 
 const SERVICES = [
