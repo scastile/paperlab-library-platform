@@ -4,6 +4,8 @@ import LandingPage from './pages/LandingPage'
 import Dashboard from './pages/Dashboard'
 import Crossword from './pages/Crossword'
 import EventPlanner from './pages/EventPlanner'
+import EscapeRoom from './pages/EscapeRoom'
+import FlyerStudio from './pages/FlyerStudio'
 
 export default function App() {
   const { loading } = useAuth()
@@ -22,6 +24,8 @@ export default function App() {
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/crossword" element={<Crossword />} />
       <Route path="/event-planner" element={<EventPlanner />} />
+      <Route path="/escape-room" element={<EscapeRoom />} />
+      <Route path="/flyer-studio" element={<FlyerStudio />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )

@@ -52,19 +52,6 @@ services:
       retries: 3
       start_period: 15s
 
-  escape-frontend:
-    build:
-      context: ./apps/escape-room-designer/frontend
-      args:
-        VITE_POCKETBASE_URL: /pb
-    ports:
-      - "8203:80"
-    networks:
-      - default
-    depends_on:
-      - escape-backend
-    restart: unless-stopped
-
   # --- Event Flyer Studio ---
   flyer-backend:
     build:
@@ -87,19 +74,6 @@ services:
       timeout: 10s
       retries: 3
       start_period: 15s
-
-  flyer-frontend:
-    build:
-      context: ./apps/event-flyer-studio/frontend
-      args:
-        VITE_POCKETBASE_URL: /pb
-    ports:
-      - "8204:80"
-    networks:
-      - default
-    depends_on:
-      - flyer-backend
-    restart: unless-stopped
 
   # --- LibPaper Landing Page ---
   landing:

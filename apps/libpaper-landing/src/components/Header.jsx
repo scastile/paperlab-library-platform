@@ -4,8 +4,8 @@ import CreditBadge from './CreditBadge'
 
 const SERVICES = [
   { icon: Rocket, label: 'Launchpad', href: 'https://launchpad.paperlab.xyz', tint: 'tint-indigo', color: '#6366f1' },
-  { icon: Puzzle, label: 'Escape Room', href: 'https://escape.paperlab.xyz', tint: 'tint-violet', color: '#8b5cf6' },
-  { icon: Palette, label: 'Flyer Studio', href: 'https://flyer.paperlab.xyz', tint: 'tint-rose', color: '#f43f5e' },
+  { icon: Puzzle, label: 'Escape Room', href: '/escape-room', tint: 'tint-violet', color: '#8b5cf6', internal: true },
+  { icon: Palette, label: 'Flyer Studio', href: '/flyer-studio', tint: 'tint-rose', color: '#f43f5e', internal: true },
   { icon: CalendarDays, label: 'Event Planner', href: '/event-planner', tint: 'tint-amber', color: '#f59e0b', internal: true },
 ]
 
