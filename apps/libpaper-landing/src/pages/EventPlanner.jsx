@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { CalendarDays, Plus, Trash2, Clock, MapPin, Users, Sparkles, X, CheckCircle2, CalendarClock } from 'lucide-react'
+import { useAuth } from '../context/AuthContext'
+import { CalendarDays, Plus, Trash2, MapPin, Users, Sparkles, CheckCircle2, CalendarClock, LogIn, Coins, X } from 'lucide-react'
 
 const STORAGE_KEY = 'paperlab_event_plans'
+const API_BASE = import.meta.env.VITE_API_URL || '/api'
+const PLAN_COST = 1
 
 const EVENT_TYPES = ['Program', 'Workshop', 'Display', 'Book Club', 'Reading', 'Film Screening', 'Outreach', 'Other']
 const AUDIENCES = ['All Ages', 'Children', 'Teens', 'Adults', 'Seniors', 'Educators']
@@ -92,8 +95,12 @@ function emptyForm() {
 
 export default function EventPlanner() {
   const navigate = useNavigate()
+  const { user, session } = useAuth()
   const [form, setForm] = useState(emptyForm)
   const [events, setEvents] = useState([])
+  const [credits, setCredits] = useState(null)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
   const [savedFlash, setSavedFlash] = useState(false)
 
   useEffect(() => {
@@ -105,27 +112,81 @@ export default function EventPlanner() {
     }
   }, [])
 
+  // Load credit balance when signed in
+  useEffect(() => {
+    if (!user || !session?.access_token) {
+      setCredits(null)
+      return
+    }
+    let cancelled = false
+    fetch(`${API_BASE}/credits/balance`, {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (!cancelled) setCredits(d) })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [user, session?.access_token])
+
   const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }))
 
-  const addEvent = () => {
+  const addEvent = async () => {
     if (!form.name.trim()) return
-    const checklist = TYPE_CHECKLISTS[form.type] || TYPE_CHECKLISTS.Other
-    const baseCost = BASE_COSTS[form.type] || 25
-    const cap = parseInt(form.capacity, 10)
-    const capacityCost = cap > 0 ? Math.min(60, Math.round(cap / 20) * 10) : 0
-    const newEvent = {
-      id: Date.now(),
-      ...form,
-      checklist,
-      estimated_cost: baseCost + capacityCost,
-      created_at: new Date().toISOString(),
+    setError('')
+    setSavedFlash(false)
+
+    if (!user || !session?.access_token) {
+      setError('Please sign in to save event plans. Plans cost 1 credit each.')
+      return
     }
-    const next = [newEvent, ...events]
-    setEvents(next)
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
-    setForm(emptyForm())
-    setSavedFlash(true)
-    setTimeout(() => setSavedFlash(false), 2000)
+
+    setSaving(true)
+    try {
+      const res = await fetch(`${API_BASE}/credits/deduct`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ action: 'event_plan', app: 'event-planner', product: 'event-planner' }),
+      })
+
+      if (!res.ok) {
+        if (res.status === 402) {
+          setError('Not enough credits. Event plans cost 1 credit — top up from your dashboard.')
+        } else if (res.status === 401) {
+          setError('Your session expired. Please sign in again.')
+        } else {
+          setError(`Could not use credits (${res.status}). Please try again.`)
+        }
+        return
+      }
+
+      const balance = await res.json()
+      setCredits(balance)
+
+      const checklist = TYPE_CHECKLISTS[form.type] || TYPE_CHECKLISTS.Other
+      const baseCost = BASE_COSTS[form.type] || 25
+      const cap = parseInt(form.capacity, 10)
+      const capacityCost = cap > 0 ? Math.min(60, Math.round(cap / 20) * 10) : 0
+      const newEvent = {
+        id: Date.now(),
+        ...form,
+        checklist,
+        estimated_cost: baseCost + capacityCost,
+        created_at: new Date().toISOString(),
+      }
+      const next = [newEvent, ...events]
+      setEvents(next)
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
+      setForm(emptyForm())
+      setSavedFlash(true)
+      setTimeout(() => setSavedFlash(false), 2000)
+    } catch (e) {
+      setError('Network error while deducting credits. Please try again.')
+    } finally {
+      setSaving(false)
+    }
   }
 
   const deleteEvent = (id) => {
@@ -144,7 +205,6 @@ export default function EventPlanner() {
       </div>
 
       <div className="relative z-10 max-w-6xl mx-auto px-6 py-12">
-        {/* Back */}
         <button
           onClick={() => navigate('/')}
           className="mb-8 text-secondary hover:text-primary transition-all flex items-center gap-1.5 text-sm font-medium"
@@ -164,9 +224,41 @@ export default function EventPlanner() {
           </h1>
           <p className="text-lg text-secondary mt-4 max-w-2xl mx-auto hero-sub">
             Plan a library program end to end — name it, pick a type, and get an auto-generated task
-            checklist and budget estimate. Saved locally in your browser.
+            checklist and budget estimate. Saves cost 1 credit.
           </p>
         </header>
+
+        {/* Sign-in / balance strip */}
+        <div className="max-w-3xl mx-auto mb-10">
+          {user ? (
+            <div className="glass-card px-5 py-4 flex items-center justify-between gap-4 flex-wrap">
+              <div className="flex items-center gap-2 text-sm text-secondary">
+                <Coins className="w-4 h-4 accent-solid" />
+                <span>
+                  Balance:{' '}
+                  <span className="font-semibold text-primary">{credits?.total_available ?? '…'} credits</span>
+                </span>
+                <span className="text-tertiary">· saving a plan costs {PLAN_COST} credit</span>
+              </div>
+              <a href="/dashboard" className="text-sm font-medium accent-solid hover:underline">Buy more credits</a>
+            </div>
+          ) : (
+            <div className="glass-card px-5 py-4 flex items-center justify-between gap-4 flex-wrap">
+              <p className="text-sm text-secondary flex items-center gap-2">
+                <LogIn className="w-4 h-4 accent-solid" />
+                Sign in to save plans and use credits. Preview the generator free — saving costs 1 credit.
+              </p>
+              <a href="/" className="btn-gradient px-4 py-2 rounded-lg text-sm font-medium">Sign in</a>
+            </div>
+          )}
+        </div>
+
+        {error && (
+          <div className="max-w-3xl mx-auto mb-6 px-4 py-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-sm flex items-start gap-2">
+            <X className="w-4 h-4 flex-shrink-0 mt-0.5" />
+            {error}
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-12">
           {/* Builder */}
@@ -226,10 +318,10 @@ export default function EventPlanner() {
 
             <button
               onClick={addEvent}
-              disabled={!form.name.trim()}
+              disabled={!form.name.trim() || saving}
               className="btn-gradient w-full mt-5 py-3 px-6 rounded-lg font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
             >
-              <Sparkles className="w-4 h-4" /> Create Event Plan
+              <Sparkles className="w-4 h-4" /> {saving ? 'Saving…' : 'Create Event Plan (1 credit)'}
             </button>
 
             {savedFlash && (
@@ -239,7 +331,7 @@ export default function EventPlanner() {
             )}
           </section>
 
-          {/* Live preview of checklist + budget */}
+          {/* Live preview */}
           <aside className="lg:col-span-2 flex flex-col gap-5">
             <div className="glass-card p-6">
               <h3 className="text-base font-bold text-primary mb-3 flex items-center gap-2">

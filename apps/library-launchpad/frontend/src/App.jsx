@@ -321,6 +321,16 @@ export default function App() {
     )
   }
 
+  // Wait for PocketBase auth (incl. SSO token import) before deciding on Login
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-page">
+        <div className="page-gradient-bg"><div className="gradient-mesh" /></div>
+        <div className="w-8 h-8 border-2 border-[var(--accent-solid)] border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
+  }
+
   // Show login if PocketBase is configured and user is not signed in (unless guest mode)
   const pocketbaseUrl = import.meta.env.VITE_POCKETBASE_URL
   if (pocketbaseUrl && !user && !guestMode) {
@@ -344,7 +354,7 @@ export default function App() {
           <div className="flex items-center gap-2 flex-shrink-0">
             {/* Return home — always available, especially in demo/guest mode */}
             <a
-              href="https://lib.paperlab.xyz"
+              href={getToken() ? `https://lib.paperlab.xyz/#access_token=${getToken()}` : 'https://lib.paperlab.xyz'}
               className="flex items-center gap-2 px-3 py-1.5 text-sm text-secondary hover:text-primary hover:bg-hover rounded-lg transition-all duration-250 no-underline"
             >
               <ArrowLeft className="w-4 h-4" />

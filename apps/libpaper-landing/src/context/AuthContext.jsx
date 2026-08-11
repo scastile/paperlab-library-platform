@@ -14,6 +14,26 @@ function sessionFromPb() {
   }
 }
 
+// SSO: adopt a session token passed via URL hash from a PaperLab product.
+// Lets the landing recognize a session created on another tool's domain.
+async function importTokenFromHash() {
+  const hash = window.location.hash.substring(1)
+  const params = new URLSearchParams(hash)
+  const token = params.get('access_token')
+  if (!token) return
+  if (pb.authStore.isValid) {
+    history.replaceState(null, '', window.location.pathname + window.location.search)
+    return
+  }
+  try {
+    pb.authStore.save(token, null)
+    await pb.collection('users').authRefresh()
+  } catch {
+    pb.authStore.clear()
+  }
+  history.replaceState(null, '', window.location.pathname + window.location.search)
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [session, setSession] = useState(null)
@@ -22,28 +42,37 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     let mounted = true
 
-    // 0. If coming back from signOut, force clean state — don't restore cached session
-    const justSignedOut = new URLSearchParams(window.location.search).get('signed_out') === '1'
-    if (justSignedOut) {
-      pb.authStore.clear()
+    const init = async () => {
+      // 0. If coming back from signOut, force clean state — don't restore cached session
+      const justSignedOut = new URLSearchParams(window.location.search).get('signed_out') === '1'
+      if (justSignedOut) {
+        pb.authStore.clear()
+        if (mounted) {
+          setSession(null)
+          setUser(null)
+          setLoading(false)
+        }
+        // Clean up the param so it doesn't stick
+        const cleaner = new URL(window.location.href)
+        cleaner.searchParams.delete('signed_out')
+        history.replaceState({}, '', cleaner.toString())
+        return
+      }
+
+      // 0b. SSO: adopt a token arriving from another PaperLab product
+      await importTokenFromHash()
+
+      // 1. Restore an existing PocketBase session (authStore is localStorage-backed)
       if (mounted) {
-        setSession(null)
-        setUser(null)
+        if (pb.authStore.isValid) {
+          setUser(pb.authStore.model)
+          setSession(sessionFromPb())
+        }
         setLoading(false)
       }
-      // Clean up the param so it doesn't stick
-      const cleaner = new URL(window.location.href)
-      cleaner.searchParams.delete('signed_out')
-      history.replaceState({}, '', cleaner.toString())
-      return
     }
 
-    // 1. Restore an existing PocketBase session (authStore is localStorage-backed)
-    if (pb.authStore.isValid) {
-      setUser(pb.authStore.model)
-      setSession(sessionFromPb())
-    }
-    setLoading(false)
+    init()
 
     // 2. Subscribe to auth state changes
     const unsub = pb.authStore.onChange((token, model) => {
