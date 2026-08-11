@@ -3,8 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import Header from '../components/Header'
 import ServiceCard from '../components/ServiceCard'
-import { Rocket, Puzzle, Palette } from 'lucide-react'
-import { buildProductUrl } from '../lib/auth-bridge'
+import { Rocket, Puzzle, Palette, CalendarDays } from 'lucide-react'
 
 const SERVICES = [
   {
@@ -20,7 +19,7 @@ const SERVICES = [
     icon: Puzzle,
     title: 'Escape Room Designer',
     description: 'Build complete escape room concepts with puzzle paths, prop inventories, clue sequences, and game master cheat sheets.',
-    href: 'https://escape.paperlab.xyz',
+    href: '/escape-room',
     tint: 'tint-violet',
     tag: 'Live',
     tagClass: 'bg-emerald-500/10 text-emerald-500',
@@ -29,15 +28,24 @@ const SERVICES = [
     icon: Palette,
     title: 'Event Flyer Studio',
     description: 'Describe your event, pick a vibe, get a print-ready flyer with AI-generated imagery and your library info baked in.',
-    href: 'https://flyer.paperlab.xyz',
+    href: '/flyer-studio',
     tint: 'tint-rose',
+    tag: 'Live',
+    tagClass: 'bg-emerald-500/10 text-emerald-500',
+  },
+  {
+    icon: CalendarDays,
+    title: 'Event Planner',
+    description: 'Plan library programs end to end — auto-generated task checklists, budgets, and timelines for any event type.',
+    href: '/event-planner',
+    tint: 'tint-amber',
     tag: 'Live',
     tagClass: 'bg-emerald-500/10 text-emerald-500',
   },
 ]
 
 export default function Dashboard() {
-  const { user, loading, session } = useAuth()
+  const { user, loading } = useAuth()
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -48,7 +56,11 @@ export default function Dashboard() {
 
   const goToProduct = (url) => (e) => {
     e.preventDefault()
-    window.location.href = buildProductUrl(url, session)
+    if (url.startsWith('/')) {
+      navigate(url)
+    } else {
+      window.location.href = url
+    }
   }
 
   if (loading || !user) {
