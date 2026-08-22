@@ -103,7 +103,7 @@ function GeneratorForm({ onGenerate, loading }) {
 
       <button type="submit" disabled={loading} className="btn-gradient w-full justify-center mt-6 disabled:opacity-60">
         {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
-        {loading ? 'Generating...' : 'Generate Escape Room (8 credits)'}
+        {loading ? 'Generating...' : 'Generate Escape Room (10 credits)'}
       </button>
     </form>
   )
