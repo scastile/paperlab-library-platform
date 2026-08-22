@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import Header from '../components/Header'
 import { track } from '../lib/analytics'
 import { CalendarDays, Plus, Trash2, MapPin, Users, Sparkles, CheckCircle2, CalendarClock, LogIn, Coins, X } from 'lucide-react'
 
@@ -209,6 +210,29 @@ export default function EventPlanner() {
 
   const inputCls =
     'w-full px-3.5 py-2.5 text-[15px] text-primary placeholder:text-tertiary focus:outline-none rounded-lg border border-default bg-input/60 backdrop-blur-sm focus:border-[var(--accent-solid)] focus:ring-2 focus:ring-[var(--accent-solid)]/20 transition-all'
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-page design-stripe">
+        <div className="page-gradient-bg"><div className="gradient-mesh" /></div>
+        <div className="relative z-10">
+          <Header />
+          <div className="max-w-md mx-auto px-6 py-20">
+            <div className="glass-card p-10 text-center">
+              <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl tint-amber mb-4">
+                <CalendarDays className="w-7 h-7 text-[var(--accent-solid)]" />
+              </div>
+              <h1 className="text-2xl font-bold text-primary mb-2">Event Planner</h1>
+              <p className="text-secondary mb-6 flex items-center justify-center gap-2">
+                <LogIn className="w-4 h-4 accent-solid" /> Sign in to plan library events end to end.
+              </p>
+              <a href="/" className="btn-gradient w-full">Sign in</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-page design-stripe">

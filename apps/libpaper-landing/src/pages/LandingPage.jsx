@@ -120,7 +120,7 @@ export default function LandingPage() {
         </section>
 
         {/* Product Cards */}
-        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-20 relative">
+        <section className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-20 relative">
           {SERVICES.map((s) => (
             <ServiceCard key={s.title} {...s} href={s.href} />
           ))}
