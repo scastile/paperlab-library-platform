@@ -4,12 +4,10 @@ import CardGrid from './components/CardGrid'
 import CampaignToolbar from './components/CampaignToolbar'
 import CardModal from './components/CardModal'
 import CreditsModal from './components/CreditsModal'
-import WelcomeModal from './components/WelcomeModal'
 import Login from './components/Login'
 import GenerationStatus from './components/GenerationStatus'
 import { useAuth } from './context/AuthContext'
 import { LogOut, Lock, Sparkles, CreditCard, Trash2, Sun, Moon, ChevronDown, ChevronRight, ArrowLeft } from 'lucide-react'
-import { getRandomExample } from './data/exampleCampaigns'
 import { featuredCampaigns } from './data/exampleCampaigns'
 import Footer from './components/Footer'
 
@@ -25,7 +23,6 @@ async function apiCall(path, options = {}, getToken) {
 
 export default function App() {
   const { user, loading: authLoading, getToken, signOut } = useAuth()
-  const [guestMode, setGuestMode] = useState(false)
   const [campaign, setCampaign] = useState(null)
   const [loading, setLoading] = useState(false)
   const [generatingTopic, setGeneratingTopic] = useState('')
@@ -35,7 +32,6 @@ export default function App() {
   const [selectedCard, setSelectedCard] = useState(null)
   const [credits, setCredits] = useState(null)
   const [showCreditModal, setShowCreditModal] = useState(false)
-  const [showWelcomeModal, setShowWelcomeModal] = useState(false)
   const [detailsExpanded, setDetailsExpanded] = useState(true)
   const [savedExpanded, setSavedExpanded] = useState(true)
   const [theme, setTheme] = useState(() => {
@@ -66,7 +62,7 @@ export default function App() {
 
   // Fetch credit balance when user logs in
   useEffect(() => {
-    if (user && !guestMode) {
+    if (user) {
       apiCall('/credits/balance', {}, getToken)
         .then(r => r.json())
         .then(setCredits)
@@ -74,10 +70,10 @@ export default function App() {
     } else {
       setCredits(null)
     }
-  }, [user, guestMode])
+  }, [user])
 
   const fetchCredits = async () => {
-    if (!user || guestMode) return
+    if (!user) return
     try {
       const res = await apiCall('/credits/balance', {}, getToken)
       const data = await res.json()
@@ -89,13 +85,6 @@ export default function App() {
     setLoading(true)
     setGeneratingTopic(topic)
     try {
-      if (guestMode) {
-        // Guest mode: show a pre-built example instead of burning API credits
-        await new Promise(r => setTimeout(r, 800)) // fake loading for feel
-        const example = getRandomExample()
-        setCampaign({ ...example, topic })
-        return
-      }
       const res = await apiCall('/generate', {
         method: 'POST',
         body: JSON.stringify({ topic, generate_image: generateImage, target_audience: targetAudience, budget }),
@@ -110,7 +99,7 @@ export default function App() {
       }
       
       if (res.status === 403) {
-        setGuestMode(true) // Fall back to guest if not logged in
+        setError('Please sign in to generate campaigns.')
         return
       }
       
@@ -141,7 +130,6 @@ export default function App() {
 
   const rerollCard = async (cardId) => {
     if (!campaign) return
-    if (guestMode) { setGuestMode(false); return }
     setRerolling(prev => new Set(prev).add(cardId))
 
     try {
@@ -173,7 +161,6 @@ export default function App() {
 
   const rerollAll = async () => {
     if (!campaign) return
-    if (guestMode) { setGuestMode(false); return }
     const unpinned = campaign.cards.filter(c => !c.pinned)
     if (unpinned.length === 0) return
     setRerolling(new Set(unpinned.map(c => c.id)))
@@ -204,7 +191,6 @@ export default function App() {
 
   const saveCampaign = async () => {
     if (!campaign || isSaved || saving) return
-    if (guestMode) { setGuestMode(false); return }
     setSaving(true)
     try {
       const res = await apiCall('/save', {
@@ -331,13 +317,10 @@ export default function App() {
     )
   }
 
-  // Show login if PocketBase is configured and user is not signed in (unless guest mode)
+  // Require sign-in — no guest mode
   const pocketbaseUrl = import.meta.env.VITE_POCKETBASE_URL
-  if (pocketbaseUrl && !user && !guestMode) {
-    return <Login onSkip={() => {
-      setGuestMode(true)
-      setShowWelcomeModal(true)
-    }} />
+  if (pocketbaseUrl && !user) {
+    return <Login />
   }
 
   return (
@@ -387,15 +370,6 @@ export default function App() {
               </button>
             </>
           )}
-          {guestMode && (
-            <button
-              onClick={() => setGuestMode(false)}
-              className="btn-gradient flex items-center gap-2 px-4 py-2 text-sm rounded-lg font-medium"
-            >
-              <Lock className="w-4 h-4" />
-              Sign Up for AI Generation
-            </button>
-          )}
           </div>
         </div>
         <p className="text-secondary max-w-2xl">
@@ -411,29 +385,11 @@ export default function App() {
         </div>
       </header>
 
-      {guestMode && (
-        <div className="mb-8 p-5 bg-card border border-default rounded-xl flex items-center justify-between gap-4 flex-wrap" style={{boxShadow: 'var(--shadow-sm)'}}>
-          <div>
-            <p className="text-primary font-semibold">You're viewing example campaigns</p>
-            <p className="text-secondary text-sm">Sign up to generate custom AI-powered campaigns for any topic.</p>
-          </div>
-          <div className="flex flex-col items-end gap-1">
-            <button
-              onClick={() => setGuestMode(false)}
-              className="btn-gradient px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap"
-            >
-              Unlock AI Generation
-            </button>
-            <span className="text-[10px] text-tertiary">Campaigns 5cr · Rerolls 1cr · Escape Rooms 5cr</span>
-          </div>
-        </div>
-      )}
-
       <div className="space-y-8">
         <SearchBar onGenerate={generate} loading={loading} />
 
         {/* Saved Campaigns — collapsible */}
-        {!guestMode && campaigns.length > 0 && (
+        {campaigns.length > 0 && (
           <div>
             <button
               onClick={() => setSavedExpanded(!savedExpanded)}
@@ -478,28 +434,6 @@ export default function App() {
               ))}
               </div>
             )}
-          </div>
-        )}
-
-        {/* Featured example campaigns */}
-        {guestMode && featuredCampaigns.length > 0 && (
-          <div>
-            <h3 className="section-label mb-4">Example Campaigns</h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-              {featuredCampaigns.map((c, i) => (
-                <div
-                  key={i}
-                  className="card-lift p-4 cursor-pointer relative"
-                  onClick={() => setCampaign({ ...c })}
-                >
-                  <p className="text-sm font-medium text-primary truncate">{c.topic}</p>
-                  <p className="text-xs text-tertiary mt-1">{c.cards.length} cards · {c.media[0]?.author}</p>
-                  {c.cards.some(card => card.full_plan) && (
-                    <span className="absolute top-2 right-2 text-[9px] font-medium px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400">Full Plan</span>
-                  )}
-                </div>
-              ))}
-            </div>
           </div>
         )}
 
@@ -634,21 +568,8 @@ export default function App() {
         </div>
       )}
 
-      {/* Welcome Modal — nudges guest users to pick an example */}
-      {showWelcomeModal && (
-        <WelcomeModal
-          campaigns={featuredCampaigns}
-          onSelect={(c) => {
-            setCampaign({ ...c })
-            setShowWelcomeModal(false)
-          }}
-          onClose={() => setShowWelcomeModal(false)}
-          onSignUp={() => {
-            setShowWelcomeModal(false)
-            setGuestMode(false)
-          }}
-        />
-      )}
+      {/* Welcome modal removed — login required */}
+
 
       {/* Card Detail Modal */}
       {selectedCard && (

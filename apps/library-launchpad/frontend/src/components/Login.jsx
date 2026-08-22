@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { LogIn, Sparkles, Rocket, BookOpen, Wand2, ArrowRight, Loader2, Puzzle, Share2, Calendar } from 'lucide-react'
 
-export default function Login({ onSkip }) {
+export default function Login() {
   const { signIn, signUp } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -91,7 +91,7 @@ export default function Login({ onSkip }) {
               {isSignUp ? 'Create your account' : 'Welcome back'}
             </h2>
             <p className="text-secondary text-sm mb-6">
-              {isSignUp ? 'Get 10 free credits to try it out' : 'Sign in to your campaigns'}
+              {isSignUp ? 'Get 5 free credits to try it out' : 'Sign in to your campaigns'}
             </p>
 
             {error && (
@@ -169,34 +169,18 @@ export default function Login({ onSkip }) {
             </div>
 
             <div className="mt-auto bg-page rounded-lg p-3 text-center text-xs">
-              <p className="font-medium text-primary">With your 10 free credits you can:</p>
+              <p className="font-medium text-primary">With your 5 free credits you can:</p>
               <p className="text-secondary mt-1">Generate a campaign (5 cr) + 5 rerolls, or try an escape room (5 cr)</p>
             </div>
           </div>
 
-          {/* Demo CTA — 2 cols */}
-          <div className="md:col-span-2 flex flex-col gap-4">
-            <div className="card-lift p-6 text-center flex-1 flex flex-col justify-center">
-              <div className="w-12 h-12 rounded-xl tint-indigo flex items-center justify-center mx-auto mb-3">
-                <BookOpen className="w-6 h-6" />
-              </div>
-              <h3 className="font-semibold text-primary mb-1">Try the Demo</h3>
-              <p className="text-secondary text-sm mb-4 leading-relaxed">
-                See Alice in Wonderland escape rooms, promotional displays, and social media campaigns — no signup required.
-              </p>
-              <button
-                onClick={onSkip}
-                className="btn-gradient w-full py-3 rounded-xl font-medium flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-solid)]"
-              >
-                Browse Example Campaigns <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
-
+          {/* Pricing CTA — full width */}
+          <div className="md:col-span-2">
             <div className="bg-card rounded-xl p-5 border border-default" style={{boxShadow: 'var(--shadow-sm)'}}>
               <p className="section-label mb-3">Simple Pricing</p>
               <div className="space-y-3 text-sm">
                 <div className="bg-page rounded-lg p-3 text-center">
-                  <p className="font-semibold text-primary">10 free credits on signup</p>
+                  <p className="font-semibold text-primary">5 free credits on signup</p>
                   <p className="text-tertiary text-xs mt-0.5">No card required · Enough for a full campaign</p>
                 </div>
                 <div>
