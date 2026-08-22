@@ -247,46 +247,195 @@ body {
   }
 }
 
-  /* Flyer HTML Renderer Styles (ported from Event Flyer Studio) */
-  .flyer-container { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  /* ============================================================
+     Flyer HTML Renderer — graphic-designer-grade layouts
+     (FlyerPreview.jsx). Rebuilt Aug 2026: no emoji, real
+     typographic hierarchy, structured info blocks.
+     ============================================================ */
+  .flyer-container { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+  .flyer-scaler-wrap { position: relative; }
+  .flyer-scaler { position: relative; }
   .flyer-root {
-    font-family: 'Inter', 'Playfair Display', system-ui, sans-serif;
+    font-family: 'Inter', system-ui, sans-serif;
     position: relative; overflow: hidden; border-radius: 0;
-    box-shadow: 0 2px 20px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.18);
   }
-  .flyer-surface { width: 100%; height: 100%; position: relative; display: flex; flex-direction: column; overflow: hidden; }
+  .flyer-surface { width: 100%; height: 100%; position: relative; overflow: hidden; }
   .flyer-bg-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
-  .flyer-panel { position: relative; z-index: 1; display: flex; flex-direction: column; padding: 40px 48px; gap: 16px; flex: 1; }
-  .flyer-panel-left { align-items: flex-start; justify-content: center; padding-left: 72px; }
-  .flyer-panel-center { align-items: center; justify-content: center; text-align: center; padding: 32px 40px; }
-  .flyer-panel-cream { background: rgba(255, 252, 245, 0.92); margin: 60px 40px; border-radius: 4px; padding: 40px 36px; align-items: center; text-align: center; }
-  .flyer-panel-nobg { align-items: center; text-align: center; justify-content: center; padding-top: 60px; }
-  .flyer-label { font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
-  .flyer-headline { font-size: 36px; font-weight: 700; line-height: 1.15; margin: 0; color: var(--flyer-text, #1d1d1f); }
-  .flyer-headline-lg { font-size: 42px; }
-  .flyer-headline-xl { font-size: 48px; }
-  .flyer-headline-sm { font-size: 32px; }
-  .flyer-classic { font-family: 'Playfair Display', 'Inter', serif; font-size: 38px; color: #2a1f14; }
-  .flyer-body { font-size: 16px; line-height: 1.6; color: var(--flyer-body, #555); margin: 0; }
-  .flyer-info { display: flex; flex-wrap: wrap; gap: 8px 20px; font-size: 14px; color: var(--flyer-info, #777); align-items: center; justify-content: center; }
-  .flyer-info-item { white-space: nowrap; }
-  .flyer-info-stack { display: flex; flex-direction: column; gap: 6px; }
-  .flyer-info-row { font-size: 14px; color: var(--flyer-info, #666); }
-  .flyer-info-label { font-weight: 600; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 6px; }
-  .flyer-cta { display: inline-block; padding: 12px 32px; border-radius: 8px; font-size: 18px; font-weight: 600; color: white; text-align: center; }
-  .flyer-cta-sm { padding: 10px 28px; font-size: 16px; border-radius: 6px; }
-  .flyer-cta-outline { background: transparent !important; border: 2px solid; color: inherit; }
-  .flyer-accent-bar { height: 6px; width: 100%; flex-shrink: 0; }
-  .flyer-accent-bar-thin { height: 4px; }
-  .flyer-side-bar { position: absolute; left: 0; top: 0; bottom: 0; width: 12px; z-index: 2; }
-  .flyer-line { position: absolute; left: 40px; right: 40px; top: 40px; z-index: 2; }
-  .fly-line-bottom { top: auto; bottom: 40px; }
-  .flyer-split { flex-direction: row; }
-  .flyer-split-image { width: 50%; height: 100%; position: relative; overflow: hidden; }
-  .flyer-split-text { width: 50%; height: 100%; display: flex; flex-direction: column; padding: 36px 28px; align-items: center; justify-content: center; gap: 12px; text-align: center; }
-  .flyer-split-img { width: 100%; height: 100%; object-fit: cover; }
-  .flyer-split-fallback { width: 100%; height: 100%; }
-  .flyer-logo { position: absolute; top: 12px; right: 16px; max-width: 100px; max-height: 48px; z-index: 10; object-fit: contain; }
+
+  /* shared atoms */
+  .flyer-kicker {
+    font-family: 'Space Grotesk', 'Inter', sans-serif;
+    font-size: 12px; font-weight: 600; letter-spacing: 0.28em;
+    text-transform: uppercase; white-space: nowrap;
+  }
+  .flyer-tag {
+    font-family: 'Space Grotesk', 'Inter', sans-serif;
+    font-size: 13px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+  }
+  .flyer-mast-logo { max-height: 46px; max-width: 160px; object-fit: contain; }
+  .flyer-mast-logo-right { position: absolute; top: 34px; right: 44px; z-index: 5; }
+
+  .flyer-cta-btn {
+    display: inline-flex; align-items: center; gap: 10px;
+    padding: 15px 34px; border-radius: 999px;
+    font-family: 'Inter', sans-serif; font-weight: 700; font-size: 16px; letter-spacing: 0.01em;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.16); white-space: nowrap;
+  }
+
+  /* ============ POSTER — editorial, dark, dramatic ============ */
+  .flyer-poster-accent { position: absolute; top: 0; left: 0; width: 10px; height: 100%; z-index: 2; }
+  .flyer-poster-shade { position: absolute; inset: 0; z-index: 1; }
+  .flyer-poster-ring {
+    position: absolute; width: 380px; height: 380px; border: 1.5px solid;
+    border-radius: 50%; right: -150px; bottom: 130px; z-index: 2;
+  }
+  .flyer-poster-ring2 { width: 300px; height: 300px; right: -108px; bottom: 196px; }
+  .flyer-poster-mast {
+    position: absolute; top: 0; left: 0; z-index: 5; padding: 46px 56px;
+    display: flex; flex-direction: column; gap: 12px; align-items: flex-start;
+  }
+  .flyer-mast-name { font-family: 'Fraunces', serif; font-weight: 700; font-size: 22px; letter-spacing: 0.01em; }
+  .flyer-poster-content {
+    position: absolute; top: 26%; left: 0; right: 0; z-index: 4;
+    display: flex; flex-direction: column; align-items: flex-start;
+    gap: 20px; padding: 0 72px;
+  }
+  .flyer-poster-title {
+    font-family: 'Fraunces', serif; font-weight: 600;
+    font-size: 58px; line-height: 1.02; letter-spacing: -0.015em; margin: 0;
+    max-width: 480px; font-variation-settings: 'opsz' 72;
+  }
+  .flyer-poster-rule { width: 64px; height: 4px; border-radius: 2px; }
+  .flyer-poster-desc {
+    font-size: 17px; line-height: 1.6; margin: 0; max-width: 400px;
+    font-weight: 400;
+  }
+  .flyer-poster-foot {
+    position: absolute; bottom: 0; left: 0; right: 0; z-index: 4;
+    padding: 0 56px 48px; display: flex; flex-direction: column; gap: 26px;
+  }
+  .flyer-info-card { display: flex; border: 1px solid; border-radius: 2px; padding: 18px 0; }
+  .flyer-info-block {
+    flex: 1; padding: 0 22px; display: flex; flex-direction: column; gap: 6px; min-width: 0;
+  }
+  .flyer-info-block + .flyer-info-block { border-left: 1px solid var(--fd); }
+  .flyer-info-k { font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.22em; }
+  .flyer-info-v { font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 600; line-height: 1.3; overflow-wrap: break-word; }
+
+  /* ============ MODERN — Swiss grid, grotesque ============ */
+  .flyer-modern { padding: 0; }
+  .flyer-modern-halo { position: absolute; inset: 0; z-index: 1; }
+  .flyer-modern-disc {
+    position: absolute; width: 440px; height: 440px; border-radius: 50%;
+    right: -150px; top: -170px; z-index: 1; border: 2px solid; opacity: 0.9;
+  }
+  .flyer-modern-head {
+    position: absolute; top: 0; left: 0; right: 0; z-index: 4;
+    padding: 46px 56px; display: flex; justify-content: space-between; align-items: flex-start;
+  }
+  .flyer-modern-body {
+    position: absolute; top: 20%; left: 0; right: 0; z-index: 3;
+    display: flex; flex-direction: column; align-items: flex-start; gap: 20px; padding: 0 56px;
+  }
+  .flyer-modern-title {
+    font-family: 'Archivo', sans-serif; font-weight: 800;
+    font-size: 62px; line-height: 0.98; letter-spacing: -0.03em; margin: 0; max-width: 430px;
+  }
+  .flyer-modern-desc { font-size: 17px; line-height: 1.6; margin: 0; max-width: 420px; }
+  .flyer-modern-foot {
+    position: absolute; bottom: 0; left: 0; right: 0; z-index: 3;
+    padding: 0 56px 48px; display: flex; flex-direction: column; gap: 28px;
+  }
+  .flyer-modern-info { display: flex; gap: 34px; }
+  .flyer-modern-info-item { display: flex; flex-direction: column; gap: 5px; }
+  .flyer-modern-info-item + .flyer-modern-info-item { border-left: 1px solid var(--fd); padding-left: 34px; }
+  .flyer-modern-info-k { font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.2em; }
+  .flyer-modern-info-v { font-size: 15px; font-weight: 600; overflow-wrap: break-word; }
+  .flyer-modern-cta-row { display: flex; justify-content: flex-end; }
+  .flyer-cta-btn-modern { border-radius: 6px; font-family: 'Space Grotesk', sans-serif; }
+
+  /* ============ SOCIAL — 1:1, image-first ============ */
+  .flyer-social-shade { position: absolute; inset: 0; z-index: 1; }
+  .flyer-social-logo { position: absolute; top: 30px; right: 32px; max-height: 44px; max-width: 150px; z-index: 5; object-fit: contain; filter: brightness(0) invert(1); opacity: 0.92; }
+  .flyer-social-content {
+    position: absolute; left: 0; right: 0; bottom: 0; z-index: 4;
+    padding: 0 52px 54px; display: flex; flex-direction: column; align-items: center; gap: 16px; text-align: center;
+  }
+  .flyer-social-kicker { font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 0.3em; text-transform: uppercase; }
+  .flyer-social-title {
+    font-family: 'Fraunces', serif; font-weight: 600; font-size: 52px; line-height: 1.04;
+    letter-spacing: -0.01em; margin: 0; max-width: 460px;
+  }
+  .flyer-social-desc { font-size: 16px; line-height: 1.55; margin: 0; max-width: 420px; }
+  .flyer-social-line { font-size: 14px; font-weight: 500; letter-spacing: 0.04em; }
+  .flyer-cta-btn-social { padding: 15px 44px; }
+
+  /* ============ SPLIT — half image / half solid ============ */
+  .flyer-split { display: flex; }
+  .flyer-split-visual { width: 50%; height: 100%; position: relative; overflow: hidden; }
+  .flyer-split-ring {
+    position: absolute; width: 340px; height: 340px; border: 1.5px solid; border-radius: 50%;
+    left: -110px; top: -90px; z-index: 2;
+  }
+  .flyer-split-disc { position: absolute; width: 200px; height: 200px; border-radius: 50%; right: 34px; bottom: 42px; z-index: 2; }
+  .flyer-split-text {
+    width: 50%; height: 100%; padding: 54px 44px; display: flex; flex-direction: column;
+    justify-content: center; gap: 22px; position: relative; z-index: 3;
+  }
+  .flyer-split-title { font-family: 'Archivo', sans-serif; font-weight: 800; font-size: 46px; line-height: 1.02; letter-spacing: -0.02em; margin: 0; }
+  .flyer-split-desc { font-size: 15px; line-height: 1.6; margin: 0; }
+  .flyer-split-info { display: flex; flex-direction: column; gap: 14px; border-top: 1px solid var(--fd); padding-top: 22px; margin-top: 4px; }
+  .flyer-split-info-row { display: flex; align-items: baseline; gap: 14px; }
+  .flyer-split-info-k { font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.2em; min-width: 64px; }
+  .flyer-split-info-v { font-size: 15px; font-weight: 600; overflow-wrap: break-word; }
+  .flyer-split-foot-logo { max-height: 40px; max-width: 130px; object-fit: contain; margin-top: 6px; }
+
+  /* ============ CLASSIC — invitation, cream serif ============ */
+  .flyer-classic-frame {
+    position: absolute; top: 26px; left: 26px; right: 26px; bottom: 26px; border: 1px solid; z-index: 2; pointer-events: none;
+  }
+  .flyer-classic-frame-inner { top: 36px; left: 36px; right: 36px; bottom: 36px; }
+  .flyer-classic-mono {
+    position: absolute; top: 44px; left: 56px; z-index: 3; font-size: 22px; pointer-events: none;
+  }
+  .flyer-classic-mono-br { top: auto; left: auto; bottom: 44px; right: 56px; }
+  .flyer-classic-content {
+    position: absolute; inset: 0; z-index: 3; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; text-align: center; padding: 0 96px; gap: 18px;
+  }
+  .flyer-classic-kicker { font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 0.34em; text-transform: uppercase; }
+  .flyer-classic-title { font-family: 'Cormorant Garamond', serif; font-weight: 600; font-size: 62px; line-height: 1.02; margin: 0; max-width: 480px; }
+  .flyer-classic-divider { display: flex; align-items: center; gap: 14px; width: 180px; }
+  .flyer-classic-rule { height: 1px; flex: 1; }
+  .flyer-classic-diamond { width: 8px; height: 8px; transform: rotate(45deg); flex-shrink: 0; }
+  .flyer-classic-desc { font-family: 'Cormorant Garamond', serif; font-size: 19px; font-style: italic; line-height: 1.5; margin: 0; max-width: 420px; }
+  .flyer-classic-info { display: flex; flex-direction: column; gap: 8px; margin-top: 6px; }
+  .flyer-classic-info-row { display: flex; align-items: baseline; gap: 14px; }
+  .flyer-classic-info-k { font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.24em; min-width: 78px; text-align: right; }
+  .flyer-classic-info-v { font-family: 'Cormorant Garamond', serif; font-size: 20px; font-weight: 600; text-align: left; }
+  .flyer-cta-btn-classic { background: transparent !important; box-shadow: none; border: 1.5px solid; border-radius: 999px; font-family: 'Cormorant Garamond', serif; font-size: 18px; font-weight: 600; letter-spacing: 0.06em; padding: 13px 40px; }
+  .flyer-classic-logo { max-height: 44px; max-width: 150px; object-fit: contain; margin-top: 8px; }
+
+  /* ============ MINIMAL — Swiss restraint ============ */
+  .flyer-minimal-glow { position: absolute; inset: 0; z-index: 1; }
+  .flyer-minimal-rule { position: absolute; top: 44px; left: 0; right: 0; height: 1px; z-index: 4; }
+  .flyer-minimal-corner { position: absolute; top: 0; right: 0; width: 44px; height: 44px; z-index: 4; }
+  .flyer-minimal-head { position: absolute; top: 0; left: 0; right: 0; z-index: 4; padding: 64px 56px 0; display: flex; justify-content: space-between; align-items: flex-start; }
+  .flyer-minimal-mid {
+    position: absolute; top: 42%; left: 0; right: 0; z-index: 3;
+    display: flex; flex-direction: column; gap: 18px; padding: 0 64px; max-width: 540px;
+  }
+  .flyer-minimal-title { font-family: 'Archivo', sans-serif; font-weight: 700; font-size: 56px; line-height: 1.02; letter-spacing: -0.025em; margin: 0; }
+  .flyer-minimal-desc { font-size: 16px; line-height: 1.6; margin: 0; }
+  .flyer-minimal-foot {
+    position: absolute; bottom: 0; left: 0; right: 0; z-index: 3;
+    padding: 0 56px 52px; display: flex; justify-content: space-between; align-items: flex-end; gap: 20px;
+  }
+  .flyer-minimal-info { font-family: 'Space Grotesk', sans-serif; font-size: 14px; letter-spacing: 0.08em; }
+  .flyer-minimal-cta { font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 15px; letter-spacing: 0.04em; display: inline-flex; align-items: center; gap: 8px; }
+  .flyer-minimal-arrow { font-size: 20px; line-height: 1; }
+
   .flyer-actions { display: flex; gap: 8px; align-items: center; }
   .btn-png, .btn-pdf { padding: 6px 16px; border-radius: 8px; font-size: 12px; font-weight: 600; border: 1px solid var(--border-default); background: var(--bg-card); color: var(--text-primary); cursor: pointer; transition: background 0.15s ease, transform 0.1s ease; }
   .btn-png:hover, .btn-pdf:hover { background: var(--bg-hover); }
