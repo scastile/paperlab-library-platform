@@ -87,6 +87,13 @@ export function AuthProvider({ children }) {
       if (token) writeSharedToken(token)
       else clearSharedToken()
     })
+    // Fire once on mount: restores the shared SSO cookie when localStorage
+    // still has a valid session but the cookie was lost (cleared by another
+    // tab's signOut, browser cookie eviction, etc.). Without this, SSO to
+    // sibling subdomains silently breaks until the next full login.
+    if (pb.authStore.isValid && pb.authStore.token) {
+      writeSharedToken(pb.authStore.token)
+    }
 
     // 3. Keep the session + shared cookie alive while any tool is open
     const timer = setInterval(async () => {
